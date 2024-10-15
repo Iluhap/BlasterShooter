@@ -8,7 +8,21 @@ public class Blaster : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" });
+		PublicIncludePaths.AddRange(
+			new string[] { "Blaster/Public" }
+		);
+		PrivateIncludePaths.AddRange(
+			new string[] { "Blaster/Private" }
+		);
+		
+		PublicDependencyModuleNames.AddRange(new string[]
+		{
+			"Core",
+			"CoreUObject",
+			"Engine",
+			"InputCore",
+			"EnhancedInput"
+		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
