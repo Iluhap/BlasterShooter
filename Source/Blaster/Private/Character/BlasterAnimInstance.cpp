@@ -39,6 +39,8 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 	const auto* CombatComponent = BlasterCharacter->FindComponentByClass<UCombatComponent>();
 	bWeaponEquipped = IsValid(CombatComponent) and CombatComponent->IsWeaponEquipped();
+
+	bIsCrouched = BlasterCharacter->bIsCrouched;
 }
 
 

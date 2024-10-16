@@ -33,6 +33,7 @@ private:
 	void Move(const struct FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void Equip();
+	void OnCrouch();
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquip();
@@ -66,4 +67,7 @@ private:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> EquipAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> CrouchAction;
 };
