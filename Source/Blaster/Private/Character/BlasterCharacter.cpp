@@ -1,11 +1,11 @@
-﻿
-#include "Character/BlasterCharacter.h"
+﻿#include "Character/BlasterCharacter.h"
 
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "EnhancedInputComponent.h"
 #include "InputMappingContext.h"
 #include "InputActionValue.h"
+#include "Components/CombatComponent.h"
 #include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -20,7 +20,7 @@ ABlasterCharacter::ABlasterCharacter()
 	CameraArm->SetupAttachment(GetMesh());
 	CameraArm->TargetArmLength = 300.f;
 	CameraArm->bUsePawnControlRotation = true;
-	
+
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>("Follow Camera");
 	FollowCamera->SetupAttachment(CameraArm, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
@@ -30,6 +30,9 @@ ABlasterCharacter::ABlasterCharacter()
 
 	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("Overhead Widget"));
 	OverheadWidget->SetupAttachment(RootComponent);
+
+	Combat = CreateDefaultSubobject<UCombatComponent>("Combat Component");
+	Combat->SetIsReplicated(true);
 }
 
 void ABlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -41,6 +44,7 @@ void ABlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	Input->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ABlasterCharacter::Move);
 	Input->BindAction(LookAction, ETriggerEvent::Triggered, this, &ABlasterCharacter::Look);
 	Input->BindAction(JumpAction, ETriggerEvent::Started, this, &ABlasterCharacter::Jump);
+	Input->BindAction(EquipAction, ETriggerEvent::Completed, this, &ABlasterCharacter::Equip);
 }
 
 void ABlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -48,6 +52,17 @@ void ABlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME_CONDITION(ABlasterCharacter, OverlappingWeapon, COND_OwnerOnly);
 }
+
+void ABlasterCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
+void ABlasterCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+}
+
 
 void ABlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
@@ -69,11 +84,6 @@ void ABlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 	}
 }
 
-void ABlasterCharacter::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
 void ABlasterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 {
 	if (IsValid(OverlappingWeapon))
@@ -86,20 +96,15 @@ void ABlasterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 	}
 }
 
-void ABlasterCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-}
-
 void ABlasterCharacter::Move(const FInputActionValue& Value)
 {
 	const FVector2D AxisValue = Value.Get<FVector2D>();
 
 	if (IsValid(Controller))
 	{
-		const FRotator Yaw = {0.f, Controller->GetControlRotation().Yaw, 0.f};
-		const FVector Forward =	FRotationMatrix(Yaw).GetUnitAxis(EAxis::X);
-		const FVector Right =	FRotationMatrix(Yaw).GetUnitAxis(EAxis::Y);
+		const FRotator Yaw = { 0.f, Controller->GetControlRotation().Yaw, 0.f };
+		const FVector Forward = FRotationMatrix(Yaw).GetUnitAxis(EAxis::X);
+		const FVector Right = FRotationMatrix(Yaw).GetUnitAxis(EAxis::Y);
 
 		AddMovementInput(Forward, AxisValue.Y);
 		AddMovementInput(Right, AxisValue.X);
@@ -111,4 +116,27 @@ void ABlasterCharacter::Look(const FInputActionValue& Value)
 	const FVector2D AxisValue = Value.Get<FVector2D>();
 	AddControllerYawInput(AxisValue.X);
 	AddControllerPitchInput(AxisValue.Y);
+}
+
+void ABlasterCharacter::Equip()
+{
+	if (IsValid(Combat))
+	{
+		if (HasAuthority())
+		{
+			Combat->EquipWeapon(OverlappingWeapon);
+		}
+		else
+		{
+			ServerEquip();
+		}
+	}
+}
+
+void ABlasterCharacter::ServerEquip_Implementation()
+{
+	if (IsValid(Combat))
+	{
+		Combat->EquipWeapon(OverlappingWeapon);
+	}
 }

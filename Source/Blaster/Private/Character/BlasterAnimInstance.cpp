@@ -4,6 +4,7 @@
 #include "Character/BlasterAnimInstance.h"
 
 #include "Character/BlasterCharacter.h"
+#include "Components/CombatComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 
@@ -35,6 +36,9 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 	const float CurrentAcceleration = BlasterCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size(); 
 	bIsAccelerating = CurrentAcceleration > 0.f;
+
+	const auto* CombatComponent = BlasterCharacter->FindComponentByClass<UCombatComponent>();
+	bWeaponEquipped = IsValid(CombatComponent) and CombatComponent->IsWeaponEquipped();
 }
 
 

@@ -32,6 +32,10 @@ private:
 private:
 	void Move(const struct FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+	void Equip();
+
+	UFUNCTION(Server, Reliable)
+	void ServerEquip();
 	
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -41,6 +45,9 @@ private:
 	TObjectPtr<class UCameraComponent> FollowCamera;
 
 private:
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<class UCombatComponent> Combat;
+	
 	UPROPERTY(ReplicatedUsing=OnRep_OverlappingWeapon)
 	AWeapon* OverlappingWeapon; 
 	
@@ -56,4 +63,7 @@ private:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> JumpAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> EquipAction;
 };
