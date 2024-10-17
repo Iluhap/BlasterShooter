@@ -5,6 +5,7 @@
 
 #include "Character/BlasterCharacter.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Weapon/Weapon.h"
 #include "Net/UnrealNetwork.h"
 
@@ -14,6 +15,7 @@ UCombatComponent::UCombatComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 	Character = nullptr;
 	EquippedWeapon = nullptr;
+	bAiming = false;
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -21,6 +23,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
+	DOREPLIFETIME(UCombatComponent, bAiming);
 }
 
 void UCombatComponent::BeginPlay()
@@ -47,7 +50,35 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	Socket->AttachActor(EquippedWeapon, Character->GetMesh());
 
 	EquippedWeapon->SetOwner(Character);
-	// EquippedWeapon->ShowPickupWidget(false);
+	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+	Character->bUseControllerRotationYaw = true;
+
+	ServerEquipWeapon(WeaponToEquip);
+}
+
+void UCombatComponent::ServerEquipWeapon_Implementation(AWeapon* WeaponToEquip)
+{
+	NetMulticastEquipWeapon(WeaponToEquip);
+}
+
+void UCombatComponent::NetMulticastEquipWeapon_Implementation(AWeapon* WeaponToEquip)
+{
+	EquippedWeapon = WeaponToEquip;
+}
+
+void UCombatComponent::SetAiming(bool bIsAiming)
+{
+	ServerSetAiming(bIsAiming);
+}
+
+void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
+{
+	NetMulticastSetAiming(bIsAiming);
+}
+
+void UCombatComponent::NetMulticastSetAiming_Implementation(bool bIsAiming)
+{
+	bAiming = bIsAiming;
 }
 
 bool UCombatComponent::IsWeaponEquipped() const
@@ -55,3 +86,16 @@ bool UCombatComponent::IsWeaponEquipped() const
 	return IsValid(EquippedWeapon);
 }
 
+bool UCombatComponent::IsAiming() const
+{
+	return bAiming;
+}
+
+void UCombatComponent::OnRep_EquippedWeapon()
+{
+	// if (IsValid(EquippedWeapon) and IsValid(Character))
+	// {
+	// 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+	// 	Character->bUseControllerRotationYaw = true;
+	// }
+}

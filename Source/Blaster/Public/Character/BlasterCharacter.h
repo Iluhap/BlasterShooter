@@ -34,9 +34,14 @@ private:
 	void Look(const FInputActionValue& Value);
 	void Equip();
 	void OnCrouch();
+	void StartAim();
+	void StopAim();
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquip();
+
+public:
+	bool IsWeaponEquipped() const;
 	
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -46,7 +51,7 @@ private:
 	TObjectPtr<class UCameraComponent> FollowCamera;
 
 private:
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	TObjectPtr<class UCombatComponent> Combat;
 	
 	UPROPERTY(ReplicatedUsing=OnRep_OverlappingWeapon)
@@ -70,4 +75,7 @@ private:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> CrouchAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> AimAction;
 };

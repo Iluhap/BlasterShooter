@@ -12,27 +12,49 @@ class BLASTER_API UCombatComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-	friend class ABlasterCharacter;
-
 public:
 	UCombatComponent();
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+protected:
+	virtual void BeginPlay() override;
 	
 public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 	void EquipWeapon(class AWeapon* WeaponToEquip);
-	bool IsWeaponEquipped() const;
+	void SetAiming(bool bIsAiming);
 
-protected:
-	virtual void BeginPlay() override;
+private:
+	UFUNCTION(Server, Reliable)
+	void ServerEquipWeapon(AWeapon* WeaponToEquip);
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastEquipWeapon(AWeapon* WeaponToEquip);
+
+	UFUNCTION(Server, Reliable)
+	void ServerSetAiming(bool bIsAiming);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastSetAiming(bool bIsAiming);
+
+public: // Getters
+	bool IsWeaponEquipped() const;
+	bool IsAiming() const;
+
+private:
+	UFUNCTION()
+	void OnRep_EquippedWeapon();
 
 private:
 	UPROPERTY()
-	ABlasterCharacter* Character;
+	class ABlasterCharacter* Character;
+
+	UPROPERTY(ReplicatedUsing=OnRep_EquippedWeapon)
+	AWeapon* EquippedWeapon;
 
 	UPROPERTY(Replicated)
-	AWeapon* EquippedWeapon;
+	bool bAiming;
 
 	UPROPERTY(EditAnywhere)
 	FName EquipSocketName = "RightHandSocket";

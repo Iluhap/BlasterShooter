@@ -32,7 +32,6 @@ ABlasterCharacter::ABlasterCharacter()
 	OverheadWidget->SetupAttachment(RootComponent);
 
 	Combat = CreateDefaultSubobject<UCombatComponent>("Combat Component");
-	Combat->SetIsReplicated(true);
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 }
@@ -48,12 +47,16 @@ void ABlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	Input->BindAction(JumpAction, ETriggerEvent::Started, this, &ABlasterCharacter::Jump);
 	Input->BindAction(EquipAction, ETriggerEvent::Completed, this, &ABlasterCharacter::Equip);
 	Input->BindAction(CrouchAction, ETriggerEvent::Started, this, &ABlasterCharacter::OnCrouch);
+
+	Input->BindAction(AimAction, ETriggerEvent::Started, this, &ABlasterCharacter::StartAim);
+	Input->BindAction(AimAction, ETriggerEvent::Completed, this, &ABlasterCharacter::StopAim);
 }
 
 void ABlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME_CONDITION(ABlasterCharacter, OverlappingWeapon, COND_OwnerOnly);
+	DOREPLIFETIME(ABlasterCharacter, Combat);
 }
 
 void ABlasterCharacter::BeginPlay()
@@ -131,7 +134,16 @@ void ABlasterCharacter::Equip()
 		else
 		{
 			ServerEquip();
+			Combat->EquipWeapon(OverlappingWeapon);
 		}
+	}
+}
+
+void ABlasterCharacter::ServerEquip_Implementation()
+{
+	if (IsValid(Combat))
+	{
+		Combat->EquipWeapon(OverlappingWeapon);
 	}
 }
 
@@ -147,10 +159,17 @@ void ABlasterCharacter::OnCrouch()
 	}
 }
 
-void ABlasterCharacter::ServerEquip_Implementation()
+void ABlasterCharacter::StartAim()
 {
-	if (IsValid(Combat))
-	{
-		Combat->EquipWeapon(OverlappingWeapon);
-	}
+	Combat->SetAiming(true);
+}
+
+void ABlasterCharacter::StopAim()
+{
+	Combat->SetAiming(false);
+}
+
+bool ABlasterCharacter::IsWeaponEquipped() const
+{
+	return Combat and Combat->IsWeaponEquipped();
 }
