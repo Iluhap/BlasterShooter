@@ -46,20 +46,17 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	}
 	bIsCrouched = BlasterCharacter->bIsCrouched;
 
+	// Offset Yaw for Strafing
 	const FRotator AimRotation = BlasterCharacter->GetBaseAimRotation();
 	const FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(BlasterCharacter->GetVelocity());
-	const FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation);
 
-	DeltaRotation = FMath::RInterpTo(DeltaRotation, DeltaRot, DeltaSeconds,1.f);
-
-	YawOffset = DeltaRotation.Yaw;
-	
+	YawOffset = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation).Yaw;
 	CharacterRotationLastFrame = CharacterRotation;
 	CharacterRotation = BlasterCharacter->GetActorRotation();
 
 	const FRotator Delta = UKismetMathLibrary::NormalizedDeltaRotator(CharacterRotation, CharacterRotationLastFrame);
 	const float Target = Delta.Yaw / DeltaSeconds;
-	const float Interp = FMath::FInterpTo(Lean, Target, DeltaSeconds, 1.f);
+	const float Interp = FMath::FInterpTo(Lean, Target, DeltaSeconds, 0.5f);
 
 	Lean = FMath::Clamp(Interp, -90.f, 90.f);
 }

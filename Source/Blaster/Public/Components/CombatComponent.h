@@ -38,6 +38,9 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastSetAiming(bool bIsAiming);
 
+private:
+	void SetMaxWalkSpeed(const float& Speed);
+
 public: // Getters
 	bool IsWeaponEquipped() const;
 	bool IsAiming() const;
@@ -58,4 +61,10 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	FName EquipSocketName = "RightHandSocket";
+
+	UPROPERTY(EditAnywhere)
+	float BaseWalkSpeed;
+	
+	UPROPERTY(EditAnywhere)
+	float AimWalkSpeed;
 };

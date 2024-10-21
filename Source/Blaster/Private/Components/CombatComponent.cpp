@@ -16,6 +16,9 @@ UCombatComponent::UCombatComponent()
 	Character = nullptr;
 	EquippedWeapon = nullptr;
 	bAiming = false;
+
+	BaseWalkSpeed = 600.f;
+	AimWalkSpeed = 450.f;
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -31,6 +34,8 @@ void UCombatComponent::BeginPlay()
 	Super::BeginPlay();
 
 	Character = Cast<ABlasterCharacter>(GetOwner());
+
+	SetMaxWalkSpeed(BaseWalkSpeed);
 }
 
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType,
@@ -79,6 +84,17 @@ void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
 void UCombatComponent::NetMulticastSetAiming_Implementation(bool bIsAiming)
 {
 	bAiming = bIsAiming;
+	
+	const float& NewWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed; 
+	SetMaxWalkSpeed(NewWalkSpeed);
+}
+
+void UCombatComponent::SetMaxWalkSpeed(const float& Speed)
+{
+	if (IsValid(Character))
+	{
+		Character->GetCharacterMovement()->MaxWalkSpeed = Speed;
+	}
 }
 
 bool UCombatComponent::IsWeaponEquipped() const
