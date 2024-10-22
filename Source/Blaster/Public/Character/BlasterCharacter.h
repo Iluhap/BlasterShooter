@@ -28,7 +28,7 @@ protected:
 private:
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
-	
+
 private:
 	void Move(const struct FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
@@ -42,7 +42,11 @@ private:
 
 public:
 	bool IsWeaponEquipped() const;
-	
+	void AimOffset(const float& DeltaTime);
+
+	FORCEINLINE float GetAimOffsetYaw() const { return AimOffsetYaw; } 
+	FORCEINLINE float GetAimOffsetPitch() const { return AimOffsetPitch; } 
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	TObjectPtr<class USpringArmComponent> CameraArm;
@@ -50,32 +54,37 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	TObjectPtr<class UCameraComponent> FollowCamera;
 
-private:
 	UPROPERTY(VisibleAnywhere, Replicated)
 	TObjectPtr<class UCombatComponent> Combat;
-	
-	UPROPERTY(ReplicatedUsing=OnRep_OverlappingWeapon)
-	AWeapon* OverlappingWeapon; 
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<class UWidgetComponent> OverheadWidget;
 
 private:
+	UPROPERTY(ReplicatedUsing=OnRep_OverlappingWeapon)
+	AWeapon* OverlappingWeapon;
+
+	float AimOffsetYaw;
+	float AimOffsetPitch;
+
+	FRotator StartingAimRotation; 
+
+private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> MoveAction;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> LookAction;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> JumpAction;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> EquipAction;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> CrouchAction;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> AimAction;
 };

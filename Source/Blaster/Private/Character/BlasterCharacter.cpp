@@ -9,6 +9,7 @@
 #include "Components/CombatComponent.h"
 #include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "Weapon/Weapon.h"
 
@@ -71,6 +72,8 @@ void ABlasterCharacter::BeginPlay()
 void ABlasterCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	AimOffset(DeltaTime);
 }
 
 void ABlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
@@ -176,4 +179,43 @@ void ABlasterCharacter::StopAim()
 bool ABlasterCharacter::IsWeaponEquipped() const
 {
 	return Combat and Combat->IsWeaponEquipped();
+}
+
+void ABlasterCharacter::AimOffset(const float& DeltaTime)
+{
+	if (Combat and not Combat->IsWeaponEquipped())
+		return;
+
+	FVector Velocity = GetVelocity();
+	Velocity.Z = 0.f;
+
+	const float Speed = Velocity.Size();
+	const bool IsInAir = GetCharacterMovement()->IsFalling();
+
+	if (Speed == 0.f and not IsInAir)
+	{
+		const FRotator CurrentAimRotation { 0.f, GetBaseAimRotation().Yaw, 0.f };
+		const FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(
+			CurrentAimRotation, StartingAimRotation);
+
+		AimOffsetYaw = DeltaAimRotation.Yaw;
+
+		bUseControllerRotationYaw = false;
+	}
+	if (Speed > 0.f or IsInAir)
+	{
+		StartingAimRotation = { 0.f, GetBaseAimRotation().Yaw, 0.f };
+		AimOffsetYaw = 0.f;
+		bUseControllerRotationYaw = true;
+	}
+
+	AimOffsetPitch = GetBaseAimRotation().Pitch;
+
+	if (AimOffsetPitch > 90.f and not IsLocallyControlled())
+	{
+		const FVector2D InRange { 270.f, 360.f };
+		const FVector2D OutRange { -90.f, 0.f };
+
+		AimOffsetPitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AimOffsetPitch);
+	}
 }
