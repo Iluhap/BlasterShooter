@@ -18,17 +18,19 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	
+
 public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 	void EquipWeapon(class AWeapon* WeaponToEquip);
 	void SetAiming(bool bIsAiming);
 
+	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
+
 private:
 	UFUNCTION(Server, Reliable)
 	void ServerEquipWeapon(AWeapon* WeaponToEquip);
-	
+
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastEquipWeapon(AWeapon* WeaponToEquip);
 
@@ -64,7 +66,7 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float BaseWalkSpeed;
-	
+
 	UPROPERTY(EditAnywhere)
 	float AimWalkSpeed;
 };

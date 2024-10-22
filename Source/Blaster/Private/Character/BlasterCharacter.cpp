@@ -39,6 +39,8 @@ ABlasterCharacter::ABlasterCharacter()
 
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+
+	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 }
 
 void ABlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -181,7 +183,7 @@ bool ABlasterCharacter::IsWeaponEquipped() const
 	return Combat and Combat->IsWeaponEquipped();
 }
 
-void ABlasterCharacter::AimOffset(const float& DeltaTime)
+void ABlasterCharacter::AimOffset(float DeltaTime)
 {
 	if (Combat and not Combat->IsWeaponEquipped())
 		return;
@@ -198,9 +200,15 @@ void ABlasterCharacter::AimOffset(const float& DeltaTime)
 		const FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(
 			CurrentAimRotation, StartingAimRotation);
 
-		AimOffsetYaw = DeltaAimRotation.Yaw;
+		if (TurningInPlace == ETurningInPlace::ETIP_NotTurning)
+		{
+			InterpAimOffsetYaw = AimOffsetYaw;
+		}
 
-		bUseControllerRotationYaw = false;
+		AimOffsetYaw = DeltaAimRotation.Yaw;
+		bUseControllerRotationYaw = true;
+
+		TurnInPlace(DeltaTime);
 	}
 	if (Speed > 0.f or IsInAir)
 	{
@@ -217,5 +225,30 @@ void ABlasterCharacter::AimOffset(const float& DeltaTime)
 		const FVector2D OutRange { -90.f, 0.f };
 
 		AimOffsetPitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AimOffsetPitch);
+	}
+}
+
+void ABlasterCharacter::TurnInPlace(float DeltaTime)
+{
+	if (AimOffsetYaw > 90.f)
+	{
+		TurningInPlace = ETurningInPlace::ETIP_Right;
+	}
+	else if (AimOffsetYaw < -90.f)
+	{
+		TurningInPlace = ETurningInPlace::ETIP_Left;
+	}
+
+	if (TurningInPlace != ETurningInPlace::ETIP_NotTurning)
+	{
+		InterpAimOffsetYaw = FMath::FInterpTo(InterpAimOffsetYaw, 0.f, DeltaTime, 4.f);
+		AimOffsetYaw = InterpAimOffsetYaw;
+
+		if (FMath::Abs(AimOffsetYaw) < 15.f)
+		{
+			TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+
+			StartingAimRotation = { 0.f, GetBaseAimRotation().Yaw, 0.f };
+		}
 	}
 }

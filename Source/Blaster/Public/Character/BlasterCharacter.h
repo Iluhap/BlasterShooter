@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BlasterTypes/TurningInPlace.h"
 #include "GameFramework/Character.h"
 #include "BlasterCharacter.generated.h"
 
@@ -42,11 +43,16 @@ private:
 
 public:
 	bool IsWeaponEquipped() const;
-	void AimOffset(const float& DeltaTime);
+	void AimOffset(float DeltaTime);
 
-	FORCEINLINE float GetAimOffsetYaw() const { return AimOffsetYaw; } 
-	FORCEINLINE float GetAimOffsetPitch() const { return AimOffsetPitch; } 
+	FORCEINLINE float GetAimOffsetYaw() const { return AimOffsetYaw; }
+	FORCEINLINE float GetAimOffsetPitch() const { return AimOffsetPitch; }
 
+	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; };
+
+private:
+	void TurnInPlace(float DeltaTime);
+	
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	TObjectPtr<class USpringArmComponent> CameraArm;
@@ -65,9 +71,12 @@ private:
 	AWeapon* OverlappingWeapon;
 
 	float AimOffsetYaw;
+	float InterpAimOffsetYaw;
 	float AimOffsetPitch;
 
-	FRotator StartingAimRotation; 
+	FRotator StartingAimRotation;
+
+	ETurningInPlace TurningInPlace;
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
