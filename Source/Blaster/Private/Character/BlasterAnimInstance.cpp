@@ -25,28 +25,39 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
+	UpdateMovementVariables();
+	UpdateCombatComponentVariables();
+	UpdateLeftHandTransform();
+	UpdateAimOffset(DeltaSeconds);
+}
+
+void UBlasterAnimInstance::UpdateLeftHandTransform()
+{
+	if (IsValid(BlasterCharacter) and IsValid(EquippedWeapon))
+	{
+		const auto* WeaponMesh = EquippedWeapon->FindComponentByClass<USkeletalMeshComponent>();
+		const auto* CharacterMesh = BlasterCharacter->FindComponentByClass<USkeletalMeshComponent>();
+
+		if (IsValid(WeaponMesh) and IsValid(CharacterMesh))
+		{
+			LeftHandTransform = WeaponMesh->GetSocketTransform(FName { "LeftHandSocket" }, RTS_World);
+
+			FVector OutPosition;
+			FRotator OutRotator;
+			CharacterMesh->TransformToBoneSpace(FName { "hand_r" },
+			                                    LeftHandTransform.GetLocation(), FRotator::ZeroRotator,
+			                                    OutPosition, OutRotator);
+
+			LeftHandTransform.SetLocation(OutPosition);
+			LeftHandTransform.SetRotation(FQuat { OutRotator });
+		}
+	}
+}
+
+void UBlasterAnimInstance::UpdateAimOffset(float DeltaSeconds)
+{
 	if (not IsValid(BlasterCharacter))
-	{
 		return;
-	}
-
-	FVector Velocity = BlasterCharacter->GetVelocity();
-	Velocity.Z = 0.f;
-
-	Speed = Velocity.Size();
-	bIsInAir = BlasterCharacter->GetCharacterMovement()->IsFalling();
-
-	const float CurrentAcceleration = BlasterCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size();
-	bIsAccelerating = CurrentAcceleration > 0.f;
-
-	if (const auto* CombatComponent = BlasterCharacter->FindComponentByClass<UCombatComponent>();
-		IsValid(CombatComponent))
-	{
-		bWeaponEquipped = CombatComponent->IsWeaponEquipped();
-		EquippedWeapon = CombatComponent->GetEquippedWeapon();
-		bIsAiming = CombatComponent->IsAiming();
-	}
-	bIsCrouched = BlasterCharacter->bIsCrouched;
 
 	// Offset Yaw for Strafing
 	const FRotator AimRotation = BlasterCharacter->GetBaseAimRotation();
@@ -65,32 +76,38 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	AimOffsetYaw = BlasterCharacter->GetAimOffsetYaw();
 	AimOffsetPitch = BlasterCharacter->GetAimOffsetPitch();
 
-	SetLeftHandTransform();
-
 	TurningInPlace = BlasterCharacter->GetTurningInPlace();
 }
 
-void UBlasterAnimInstance::SetLeftHandTransform()
+void UBlasterAnimInstance::UpdateCombatComponentVariables()
 {
-	if (IsValid(BlasterCharacter) and IsValid(EquippedWeapon))
+	if (not IsValid(BlasterCharacter))
+		return;
+
+	if (const auto* CombatComponent = BlasterCharacter->FindComponentByClass<UCombatComponent>();
+		IsValid(CombatComponent))
 	{
-		if (const auto* WeaponMesh = EquippedWeapon->FindComponentByClass<USkeletalMeshComponent>();
-			IsValid(WeaponMesh))
-		{
-			LeftHandTransform = WeaponMesh->GetSocketTransform(FName { "LeftHandSocket" }, RTS_World);
-
-			if (const auto* CharacterMesh = BlasterCharacter->FindComponentByClass<USkeletalMeshComponent>();
-				IsValid(CharacterMesh))
-			{
-				FVector OutPosition;
-				FRotator OutRotator;
-				CharacterMesh->TransformToBoneSpace(FName { "hand_r" },
-				                                    LeftHandTransform.GetLocation(), FRotator::ZeroRotator,
-				                                    OutPosition, OutRotator);
-
-				LeftHandTransform.SetLocation(OutPosition);
-				LeftHandTransform.SetRotation(FQuat { OutRotator });
-			}
-		}
+		bWeaponEquipped = CombatComponent->IsWeaponEquipped();
+		EquippedWeapon = CombatComponent->GetEquippedWeapon();
+		bIsAiming = CombatComponent->IsAiming();
 	}
+}
+
+void UBlasterAnimInstance::UpdateMovementVariables()
+{
+	if (not IsValid(BlasterCharacter))
+		return;
+
+	FVector Velocity = BlasterCharacter->GetVelocity();
+	Velocity.Z = 0.f;
+
+	bIsCrouched = BlasterCharacter->bIsCrouched;
+	Speed = Velocity.Size();
+
+	const auto* CharacterMovement = BlasterCharacter->GetCharacterMovement();
+
+	bIsInAir = CharacterMovement->IsFalling();
+
+	const float CurrentAcceleration = CharacterMovement->GetCurrentAcceleration().Size();
+	bIsAccelerating = CurrentAcceleration > 0.f;
 }

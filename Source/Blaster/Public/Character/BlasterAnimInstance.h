@@ -20,7 +20,10 @@ public:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
 private:
-	void SetLeftHandTransform();
+	void UpdateCombatComponentVariables();
+	void UpdateMovementVariables();
+	void UpdateLeftHandTransform();
+	void UpdateAimOffset(float DeltaSeconds);
 
 private:
 	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
