@@ -20,6 +20,8 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	virtual void Jump() override;
+
 public:
 	void SetOverlappingWeapon(class AWeapon* Weapon);
 
@@ -52,7 +54,7 @@ public:
 
 private:
 	void TurnInPlace(float DeltaTime);
-	
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	TObjectPtr<class USpringArmComponent> CameraArm;
