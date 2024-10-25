@@ -6,6 +6,7 @@
 #include "Character/BlasterCharacter.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Weapon/Weapon.h"
 #include "Net/UnrealNetwork.h"
 
@@ -20,6 +21,7 @@ UCombatComponent::UCombatComponent()
 
 	BaseWalkSpeed = 600.f;
 	AimWalkSpeed = 450.f;
+	HitTraceLength = 80.f * 1000.f;
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -85,8 +87,8 @@ void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
 void UCombatComponent::NetMulticastSetAiming_Implementation(bool bIsAiming)
 {
 	bAiming = bIsAiming;
-	
-	const float& NewWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed; 
+
+	const float& NewWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed;
 	SetMaxWalkSpeed(NewWalkSpeed);
 }
 
@@ -96,21 +98,62 @@ void UCombatComponent::SetFiring(bool bIsFiring)
 
 	if (bFiring)
 	{
-		ServerFire();	
+
+		FHitResult TraceResult;
+		TraceUnderCrosshair(TraceResult);
+
+		ServerFire(TraceResult.ImpactPoint);
 	}
 }
 
-void UCombatComponent::ServerFire_Implementation()
+void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& HitTarget)
 {
-	NetMulticastFire();
+	NetMulticastFire(HitTarget);
 }
 
-void UCombatComponent::NetMulticastFire_Implementation()
+void UCombatComponent::NetMulticastFire_Implementation(const FVector_NetQuantize& HitTarget)
 {
-	if (IsValid(Character))
+	if (IsValid(Character) and IsValid(EquippedWeapon))
 	{
 		Character->PlayFireMontage(bAiming);
-		EquippedWeapon->Fire();
+		
+		EquippedWeapon->Fire(HitTarget);
+	}
+}
+
+void UCombatComponent::TraceUnderCrosshair(FHitResult& HitResult) const
+{
+	FVector2D ViewportSize;
+	if (IsValid(GEngine) and IsValid(GEngine->GameViewport))
+	{
+		GEngine->GameViewport->GetViewportSize(ViewportSize);
+	}
+
+	const FVector2D CrossHairLocation { ViewportSize.X / 2, ViewportSize.Y / 2 };
+
+	FVector CrossHairWorldPosition;
+	FVector CrossHairWorldDirection;
+
+	const auto* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
+
+	if (UGameplayStatics::DeprojectScreenToWorld(
+			PlayerController,
+			CrossHairLocation,
+			CrossHairWorldPosition, CrossHairWorldDirection)
+	)
+	{
+		const FVector Start = CrossHairWorldPosition;
+		const FVector End = Start + CrossHairWorldDirection * HitTraceLength;
+
+		const bool HasHit = GetWorld()->LineTraceSingleByChannel(
+			HitResult,
+			Start, End,
+			ECC_Visibility);
+
+		if (not HasHit)
+		{
+			HitResult.ImpactPoint = End;
+		}
 	}
 }
 

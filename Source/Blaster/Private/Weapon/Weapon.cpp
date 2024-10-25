@@ -6,7 +6,10 @@
 #include "Character/BlasterCharacter.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Engine/SkeletalMeshSocket.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Weapon/AmmoCasing.h"
 
 
 AWeapon::AWeapon()
@@ -108,10 +111,25 @@ void AWeapon::SetState(const EWeaponState NewState)
 	}
 }
 
-void AWeapon::Fire()
+void AWeapon::Fire(const FVector& HitTarget)
 {
 	if (IsValid(FireAnimation))
 	{
 		Mesh->PlayAnimation(FireAnimation, false);
+	}
+
+	if (IsValid(AmmoCasingClass))
+	{
+		if (const auto* AmmoEjectSocket = Mesh->GetSocketByName(FName { "AmmoEject" });
+			IsValid(AmmoEjectSocket))
+		{
+			const auto SocketTransform = AmmoEjectSocket->GetSocketTransform(Mesh);
+
+			GetWorld()->SpawnActor<AAmmoCasing>(
+				AmmoCasingClass,
+				SocketTransform.GetLocation(),
+				SocketTransform.GetRotation().Rotator()
+			);
+		}
 	}
 }

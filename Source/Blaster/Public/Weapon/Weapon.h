@@ -47,9 +47,9 @@ public:
 	void ShowPickupWidget(bool bShowWidget);
 	void SetState(const EWeaponState NewState);
 
-	void Fire();
+	virtual void Fire(const FVector& HitTarget);
 
-private:
+protected:
 	UPROPERTY(VisibleAnywhere, Category= "Weapon Properties")
 	TObjectPtr<USkeletalMeshComponent> Mesh;
 
@@ -63,5 +63,8 @@ private:
 	TObjectPtr<class UWidgetComponent> PickupWidget;
 
 	UPROPERTY(EditAnywhere, Category= "Weapon Properties")
-	TObjectPtr<class UAnimationAsset> FireAnimation;
+	TObjectPtr<UAnimationAsset> FireAnimation;
+
+	UPROPERTY(EditAnywhere, Category= "Weapon Properties")
+	TSubclassOf<class AAmmoCasing> AmmoCasingClass;
 };

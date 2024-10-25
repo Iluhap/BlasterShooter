@@ -27,6 +27,9 @@ public:
 	void SetAiming(bool bIsAiming);
 	void SetFiring(bool bIsFiring);
 
+	void TraceUnderCrosshair(FHitResult& HitResult) const;
+	
+public:
 	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
 
 private:
@@ -43,10 +46,10 @@ private:
 	void NetMulticastSetAiming(bool bIsAiming);
 
 	UFUNCTION(Server, Reliable)
-	void ServerFire();
+	void ServerFire(const FVector_NetQuantize& HitTarget);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastFire();
+	void NetMulticastFire(const FVector_NetQuantize& HitTarget);
 
 private:
 	void SetMaxWalkSpeed(const float& Speed);
@@ -69,6 +72,7 @@ private:
 	UPROPERTY(Replicated)
 	bool bFiring;
 
+private:
 	UPROPERTY(EditAnywhere)
 	FName EquipSocketName = "RightHandSocket";
 
@@ -77,4 +81,7 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float AimWalkSpeed;
+
+	UPROPERTY(EditAnywhere)
+	float HitTraceLength;
 };
