@@ -107,3 +107,11 @@ void AWeapon::SetState(const EWeaponState NewState)
 	default: break;
 	}
 }
+
+void AWeapon::Fire()
+{
+	if (IsValid(FireAnimation))
+	{
+		Mesh->PlayAnimation(FireAnimation, false);
+	}
+}

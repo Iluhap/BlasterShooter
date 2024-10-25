@@ -28,12 +28,12 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	
+
 public:
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	
+
 	UFUNCTION()
 	void OnAreaBeginOverlap(UPrimitiveComponent* OverlappedComponent,
 	                        AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
@@ -47,6 +47,8 @@ public:
 	void ShowPickupWidget(bool bShowWidget);
 	void SetState(const EWeaponState NewState);
 
+	void Fire();
+
 private:
 	UPROPERTY(VisibleAnywhere, Category= "Weapon Properties")
 	TObjectPtr<USkeletalMeshComponent> Mesh;
@@ -59,4 +61,7 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category= "Weapon Properties")
 	TObjectPtr<class UWidgetComponent> PickupWidget;
+
+	UPROPERTY(EditAnywhere, Category= "Weapon Properties")
+	TObjectPtr<class UAnimationAsset> FireAnimation;
 };

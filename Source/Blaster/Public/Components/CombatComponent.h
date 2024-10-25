@@ -14,6 +14,7 @@ class BLASTER_API UCombatComponent : public UActorComponent
 
 public:
 	UCombatComponent();
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
@@ -24,6 +25,7 @@ public:
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 	void EquipWeapon(class AWeapon* WeaponToEquip);
 	void SetAiming(bool bIsAiming);
+	void SetFiring(bool bIsFiring);
 
 	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
 
@@ -40,26 +42,32 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastSetAiming(bool bIsAiming);
 
+	UFUNCTION(Server, Reliable)
+	void ServerFire();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastFire();
+
 private:
 	void SetMaxWalkSpeed(const float& Speed);
 
 public: // Getters
 	bool IsWeaponEquipped() const;
 	bool IsAiming() const;
-
-private:
-	UFUNCTION()
-	void OnRep_EquippedWeapon();
+	bool IsFiring() const;
 
 private:
 	UPROPERTY()
 	class ABlasterCharacter* Character;
 
-	UPROPERTY(ReplicatedUsing=OnRep_EquippedWeapon)
+	UPROPERTY(Replicated)
 	AWeapon* EquippedWeapon;
 
 	UPROPERTY(Replicated)
 	bool bAiming;
+
+	UPROPERTY(Replicated)
+	bool bFiring;
 
 	UPROPERTY(EditAnywhere)
 	FName EquipSocketName = "RightHandSocket";

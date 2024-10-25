@@ -22,6 +22,8 @@ public:
 
 	virtual void Jump() override;
 
+	void PlayFireMontage(bool IsAiming);
+
 public:
 	void SetOverlappingWeapon(class AWeapon* Weapon);
 
@@ -39,6 +41,9 @@ private:
 	void OnCrouch();
 	void StartAim();
 	void StopAim();
+
+	void StartFire();
+	void StopFire();
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquip();
@@ -67,6 +72,10 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<class UWidgetComponent> OverheadWidget;
+
+private:
+	UPROPERTY(EditAnywhere, Category = Combat)
+	TObjectPtr<UAnimMontage> FireWeaponMontage;
 
 private:
 	UPROPERTY(ReplicatedUsing=OnRep_OverlappingWeapon)
@@ -98,4 +107,7 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> AimAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> FireAction;
 };

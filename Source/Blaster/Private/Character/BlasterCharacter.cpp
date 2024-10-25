@@ -60,6 +60,9 @@ void ABlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 	Input->BindAction(AimAction, ETriggerEvent::Started, this, &ABlasterCharacter::StartAim);
 	Input->BindAction(AimAction, ETriggerEvent::Completed, this, &ABlasterCharacter::StopAim);
+
+	Input->BindAction(FireAction, ETriggerEvent::Started, this, &ABlasterCharacter::StartFire);
+	Input->BindAction(FireAction, ETriggerEvent::Completed, this, &ABlasterCharacter::StopFire);
 }
 
 void ABlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -76,6 +79,21 @@ void ABlasterCharacter::Jump()
 		UnCrouch();
 	}
 	Super::Jump();
+}
+
+void ABlasterCharacter::PlayFireMontage(bool IsAiming)
+{
+	if (not IsValid(Combat) or not Combat->IsWeaponEquipped())
+		return;
+
+	if (auto* AnimInstance = GetMesh()->GetAnimInstance();
+		IsValid(AnimInstance) and IsValid(FireWeaponMontage))
+	{
+		AnimInstance->Montage_Play(FireWeaponMontage);
+		const FName SectionName = IsAiming ? FName { "RifleAim" } : FName { "RifleHip" };
+
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
 }
 
 void ABlasterCharacter::BeginPlay()
@@ -182,12 +200,34 @@ void ABlasterCharacter::OnCrouch()
 
 void ABlasterCharacter::StartAim()
 {
-	Combat->SetAiming(true);
+	if (IsValid(Combat))
+	{
+		Combat->SetAiming(true);
+	}
 }
 
 void ABlasterCharacter::StopAim()
 {
-	Combat->SetAiming(false);
+	if (IsValid(Combat))
+	{
+		Combat->SetAiming(false);
+	}
+}
+
+void ABlasterCharacter::StartFire()
+{
+	if (IsValid(Combat))
+	{
+		Combat->SetFiring(true);
+	}
+}
+
+void ABlasterCharacter::StopFire()
+{
+	if (IsValid(Combat))
+	{
+		Combat->SetFiring(false);
+	}
 }
 
 bool ABlasterCharacter::IsWeaponEquipped() const

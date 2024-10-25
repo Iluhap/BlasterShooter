@@ -16,6 +16,7 @@ UCombatComponent::UCombatComponent()
 	Character = nullptr;
 	EquippedWeapon = nullptr;
 	bAiming = false;
+	bFiring = false;
 
 	BaseWalkSpeed = 600.f;
 	AimWalkSpeed = 450.f;
@@ -89,6 +90,30 @@ void UCombatComponent::NetMulticastSetAiming_Implementation(bool bIsAiming)
 	SetMaxWalkSpeed(NewWalkSpeed);
 }
 
+void UCombatComponent::SetFiring(bool bIsFiring)
+{
+	bFiring = bIsFiring;
+
+	if (bFiring)
+	{
+		ServerFire();	
+	}
+}
+
+void UCombatComponent::ServerFire_Implementation()
+{
+	NetMulticastFire();
+}
+
+void UCombatComponent::NetMulticastFire_Implementation()
+{
+	if (IsValid(Character))
+	{
+		Character->PlayFireMontage(bAiming);
+		EquippedWeapon->Fire();
+	}
+}
+
 void UCombatComponent::SetMaxWalkSpeed(const float& Speed)
 {
 	if (IsValid(Character))
@@ -107,11 +132,7 @@ bool UCombatComponent::IsAiming() const
 	return bAiming;
 }
 
-void UCombatComponent::OnRep_EquippedWeapon()
+bool UCombatComponent::IsFiring() const
 {
-	// if (IsValid(EquippedWeapon) and IsValid(Character))
-	// {
-	// 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
-	// 	Character->bUseControllerRotationYaw = true;
-	// }
+	return bFiring;
 }
