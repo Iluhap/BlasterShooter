@@ -4,8 +4,10 @@
 #include "Components/CombatComponent.h"
 
 #include "Character/BlasterCharacter.h"
+#include "Character/BlasterPlayerController.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "HUD/BlasterHUD.h"
 #include "Kismet/GameplayStatics.h"
 #include "Weapon/Weapon.h"
 #include "Net/UnrealNetwork.h"
@@ -13,8 +15,9 @@
 
 UCombatComponent::UCombatComponent()
 {
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
 	Character = nullptr;
+	Controller = nullptr;
 	EquippedWeapon = nullptr;
 	bAiming = false;
 	bFiring = false;
@@ -22,6 +25,9 @@ UCombatComponent::UCombatComponent()
 	BaseWalkSpeed = 600.f;
 	AimWalkSpeed = 450.f;
 	HitTraceLength = 80.f * 1000.f;
+
+	CrosshairVelocityFactorMax = 1.0f;
+	CrosshairInAirFactorMax = 2.25f;
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -38,6 +44,9 @@ void UCombatComponent::BeginPlay()
 
 	Character = Cast<ABlasterCharacter>(GetOwner());
 
+	if (Character)
+		Controller = Cast<ABlasterPlayerController>(Character->GetController());
+
 	SetMaxWalkSpeed(BaseWalkSpeed);
 }
 
@@ -45,6 +54,9 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType,
                                      FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	UpdateCrosshairFactors(DeltaTime);
+	SetHUDCrosshair(DeltaTime);
 }
 
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
@@ -98,7 +110,6 @@ void UCombatComponent::SetFiring(bool bIsFiring)
 
 	if (bFiring)
 	{
-
 		FHitResult TraceResult;
 		TraceUnderCrosshair(TraceResult);
 
@@ -116,7 +127,7 @@ void UCombatComponent::NetMulticastFire_Implementation(const FVector_NetQuantize
 	if (IsValid(Character) and IsValid(EquippedWeapon))
 	{
 		Character->PlayFireMontage(bAiming);
-		
+
 		EquippedWeapon->Fire(HitTarget);
 	}
 }
@@ -162,6 +173,61 @@ void UCombatComponent::SetMaxWalkSpeed(const float& Speed)
 	if (IsValid(Character))
 	{
 		Character->GetCharacterMovement()->MaxWalkSpeed = Speed;
+	}
+}
+
+void UCombatComponent::SetHUDCrosshair(float DeltaTime)
+{
+	if (IsValid(Controller))
+	{
+		HUD = HUD == nullptr ? Cast<ABlasterHUD>(Controller->GetHUD()) : HUD;
+		if (IsValid(HUD))
+		{
+			FHUDPackage HUDPackage {};
+			if (IsValid(EquippedWeapon))
+			{
+				HUDPackage.CrosshairCenter = EquippedWeapon->CrosshairCenter;
+				HUDPackage.CrosshairTop = EquippedWeapon->CrosshairTop;
+				HUDPackage.CrosshairBottom = EquippedWeapon->CrosshairBottom;
+				HUDPackage.CrosshairRight = EquippedWeapon->CrosshairRight;
+				HUDPackage.CrosshairLeft = EquippedWeapon->CrosshairLeft;
+			}
+			
+			HUDPackage.CrosshairSpread = CrosshairVelocityFactor + CrosshairInAirFactor;
+
+			HUD->SetHUDPackage(HUDPackage);
+		}
+	}
+}
+
+void UCombatComponent::UpdateCrosshairFactors(float DeltaTime)
+{
+	UpdateCrosshairVelocityFactor();
+	UpdateCrosshairInAirFactor(DeltaTime);
+}
+
+void UCombatComponent::UpdateCrosshairVelocityFactor()
+{
+	const FVector2D WalkSpeedRange { 0.f, Character->GetCharacterMovement()->MaxWalkSpeed };
+	const FVector2D VelocityMultiplierRange { 0.f, 1.f };
+
+	FVector Velocity = Character->GetVelocity();
+	Velocity.Z = 0.f;
+
+	CrosshairVelocityFactor = FMath::GetMappedRangeValueClamped(
+		WalkSpeedRange, VelocityMultiplierRange, Velocity.Size()
+	);
+}
+
+void UCombatComponent::UpdateCrosshairInAirFactor(float DeltaTime)
+{
+	if (Character->GetCharacterMovement()->IsFalling())
+	{
+		CrosshairInAirFactor = FMath::FInterpTo(CrosshairInAirFactor, CrosshairInAirFactorMax, DeltaTime, 2.25f);
+	}
+	else
+	{
+		CrosshairInAirFactor = FMath::FInterpTo(CrosshairInAirFactor, 0.f, DeltaTime, 30.f);
 	}
 }
 

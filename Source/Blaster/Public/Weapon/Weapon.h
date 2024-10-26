@@ -67,4 +67,20 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category= "Weapon Properties")
 	TSubclassOf<class AAmmoCasing> AmmoCasingClass;
+
+public:
+	UPROPERTY(EditAnywhere, Category=Crosshair)
+	TObjectPtr<UTexture2D> CrosshairCenter;
+	
+	UPROPERTY(EditAnywhere, Category=Crosshair)
+	TObjectPtr<UTexture2D> CrosshairTop;
+
+	UPROPERTY(EditAnywhere, Category=Crosshair)
+	TObjectPtr<UTexture2D> CrosshairBottom;
+
+	UPROPERTY(EditAnywhere, Category=Crosshair)
+	TObjectPtr<UTexture2D> CrosshairRight;
+
+	UPROPERTY(EditAnywhere, Category=Crosshair)
+	TObjectPtr<UTexture2D> CrosshairLeft;
 };

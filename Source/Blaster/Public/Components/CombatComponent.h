@@ -54,6 +54,12 @@ private:
 private:
 	void SetMaxWalkSpeed(const float& Speed);
 
+	void SetHUDCrosshair(float DeltaTime);
+
+	void UpdateCrosshairFactors(float DeltaTime);
+	void UpdateCrosshairVelocityFactor();
+	void UpdateCrosshairInAirFactor(float DeltaTime);
+
 public: // Getters
 	bool IsWeaponEquipped() const;
 	bool IsAiming() const;
@@ -63,6 +69,12 @@ private:
 	UPROPERTY()
 	class ABlasterCharacter* Character;
 
+	UPROPERTY()
+	class ABlasterPlayerController* Controller;
+
+	UPROPERTY()
+	class ABlasterHUD* HUD;
+
 	UPROPERTY(Replicated)
 	AWeapon* EquippedWeapon;
 
@@ -71,6 +83,12 @@ private:
 
 	UPROPERTY(Replicated)
 	bool bFiring;
+
+	float CrosshairVelocityFactor;
+	float CrosshairVelocityFactorMax;
+
+	float CrosshairInAirFactor;
+	float CrosshairInAirFactorMax;
 
 private:
 	UPROPERTY(EditAnywhere)
