@@ -49,6 +49,10 @@ public:
 
 	virtual void Fire(const FVector& HitTarget);
 
+public:
+	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; };
+	FORCEINLINE float GetZoomInterpSpeed() const { return ZoomInterpSpeed; };
+
 protected:
 	UPROPERTY(VisibleAnywhere, Category= "Weapon Properties")
 	TObjectPtr<USkeletalMeshComponent> Mesh;
@@ -71,7 +75,7 @@ protected:
 public:
 	UPROPERTY(EditAnywhere, Category=Crosshair)
 	TObjectPtr<UTexture2D> CrosshairCenter;
-	
+
 	UPROPERTY(EditAnywhere, Category=Crosshair)
 	TObjectPtr<UTexture2D> CrosshairTop;
 
@@ -83,4 +87,11 @@ public:
 
 	UPROPERTY(EditAnywhere, Category=Crosshair)
 	TObjectPtr<UTexture2D> CrosshairLeft;
+
+private:
+	UPROPERTY(EditAnywhere)
+	float ZoomedFOV = 30.f;
+
+	UPROPERTY(EditAnywhere)
+	float ZoomInterpSpeed = 20.f;
 };

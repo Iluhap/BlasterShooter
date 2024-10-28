@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "HUD/BlasterHUD.h"
 #include "CombatComponent.generated.h"
 
 
@@ -27,7 +28,7 @@ public:
 	void SetAiming(bool bIsAiming);
 	void SetFiring(bool bIsFiring);
 
-	void TraceUnderCrosshair(FHitResult& HitResult) const;
+	void TraceUnderCrosshair(FHitResult& HitResult);
 
 public:
 	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
@@ -52,13 +53,19 @@ private:
 	void NetMulticastFire(const FVector_NetQuantize& HitTarget);
 
 private:
-	void SetMaxWalkSpeed(const float& Speed);
+	void SetMaxWalkSpeed(float Speed);
 
 	void SetHUDCrosshair(float DeltaTime);
 
 	void UpdateCrosshairFactors(float DeltaTime);
 	void UpdateCrosshairVelocityFactor();
 	void UpdateCrosshairInAirFactor(float DeltaTime);
+	void UpdateCrosshairAimFactor(float DeltaTime);
+	void UpdateCrosshairShootingFactor(float DeltaTime);
+
+	void InterpFOV(float DeltaTime);
+
+	void UpdateCrosshairColor(const FHitResult& TraceResult);
 
 public: // Getters
 	bool IsWeaponEquipped() const;
@@ -87,12 +94,34 @@ private:
 	bool bFiring;
 
 	float CrosshairVelocityFactor;
+	float CrosshairInAirFactor;
+	float CrosshairAimFactor;
+	float CrosshairShootingFactor;
+
+	UPROPERTY(EditAnywhere, Category=Crosshair)
+	float BaseCrosshairFactor;
+
+	UPROPERTY(EditAnywhere, Category=Crosshair)
 	float CrosshairVelocityFactorMax;
 
-	float CrosshairInAirFactor;
+	UPROPERTY(EditAnywhere, Category=Crosshair)
 	float CrosshairInAirFactorMax;
 
+	UPROPERTY(EditAnywhere, Category=Crosshair)
+	float CrosshairAimFactorMax;
+
+	UPROPERTY(EditAnywhere, Category=Crosshair)
+	float CrosshairShootingFactorStep;
+
+	UPROPERTY(EditAnywhere, Category=Crosshair)
+	float CrosshairShootingFactorMax;
+
+	UPROPERTY(EditAnywhere, Category=Trace)
+	float TraceStartOffset;
+
 	FVector HitTargetLocation;
+
+	FHUDPackage HUDPackage;
 
 private:
 	UPROPERTY(EditAnywhere)
@@ -106,4 +135,16 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float HitTraceLength;
+
+	// Field of view while not aiming; set to the camera's base FOV in BeginPlay
+	UPROPERTY(EditAnywhere)
+	float DefaultFOV;
+
+	UPROPERTY(EditAnywhere, Category=Zoom)
+	float ZoomFOV = 30.f;
+
+	float CurrentFOV;
+
+	UPROPERTY(EditAnywhere, Category=Zoom)
+	float ZoomInterpSpeed = 20.f;
 };

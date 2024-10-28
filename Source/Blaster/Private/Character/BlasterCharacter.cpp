@@ -39,6 +39,7 @@ ABlasterCharacter::ABlasterCharacter()
 
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 
@@ -106,6 +107,7 @@ void ABlasterCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	AimOffset(DeltaTime);
+	HideCharacterIfCameraClose();
 }
 
 void ABlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
@@ -303,6 +305,35 @@ void ABlasterCharacter::TurnInPlace(float DeltaTime)
 			TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 
 			StartingAimRotation = { 0.f, GetBaseAimRotation().Yaw, 0.f };
+		}
+	}
+}
+
+void ABlasterCharacter::HideCharacterIfCameraClose()
+{
+	if (FVector::Distance(FollowCamera->GetComponentLocation(), GetActorLocation()) < CameraThreshold)
+	{
+		HideCharacter(true);
+	}
+	else
+	{
+		HideCharacter(false);
+	}
+}
+
+void ABlasterCharacter::HideCharacter(bool bHide)
+{
+	if (not IsLocallyControlled())
+		return;
+
+	GetMesh()->SetVisibility(not bHide);
+
+	if (IsValid(Combat) and Combat->IsWeaponEquipped())
+	{
+		if (auto* WeaponMesh = Combat->GetEquippedWeapon()->FindComponentByClass<USkeletalMeshComponent>();
+			IsValid(WeaponMesh))
+		{
+			WeaponMesh->bOwnerNoSee = bHide;
 		}
 	}
 }

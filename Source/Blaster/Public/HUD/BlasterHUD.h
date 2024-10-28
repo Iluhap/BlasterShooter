@@ -30,6 +30,9 @@ public:
 
 	UPROPERTY()
 	float CrosshairSpread;
+
+	UPROPERTY()
+	FLinearColor CrosshairColor;
 };
 
 UCLASS()
@@ -43,7 +46,9 @@ public:
 	void SetHUDPackage(const FHUDPackage& NewHUDPackage) { HUDPackage = NewHUDPackage; };
 
 private:
-	void DrawCrosshair(UTexture2D* Texture, const FVector2D& ViewPortCenter, const FVector2D& Spread);
+	void DrawCrosshair(UTexture2D* Texture,
+		const FVector2D& ViewPortCenter, const FVector2D& Spread,
+		const FLinearColor& CrosshairColor);
 
 private:
 	FHUDPackage HUDPackage;

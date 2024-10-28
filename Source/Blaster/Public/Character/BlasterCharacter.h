@@ -5,10 +5,11 @@
 #include "CoreMinimal.h"
 #include "BlasterTypes/TurningInPlace.h"
 #include "GameFramework/Character.h"
+#include "Interfaces/InteractWithCrosshairInterface.h"
 #include "BlasterCharacter.generated.h"
 
 UCLASS()
-class BLASTER_API ABlasterCharacter : public ACharacter
+class BLASTER_API ABlasterCharacter : public ACharacter, public IInteractWithCrosshairInterface
 {
 	GENERATED_BODY()
 
@@ -60,6 +61,10 @@ public:
 private:
 	void TurnInPlace(float DeltaTime);
 
+	void HideCharacterIfCameraClose();
+	
+	void HideCharacter(bool bHide);
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	TObjectPtr<class USpringArmComponent> CameraArm;
@@ -88,6 +93,9 @@ private:
 	FRotator StartingAimRotation;
 
 	ETurningInPlace TurningInPlace;
+
+	UPROPERTY(EditAnywhere, Category=Camera)
+	float CameraThreshold = 200.f;
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))

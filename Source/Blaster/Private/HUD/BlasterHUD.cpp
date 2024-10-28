@@ -16,23 +16,25 @@ void ABlasterHUD::DrawHUD()
 		float SpreadScaled = CrosshairSpreadMax * HUDPackage.CrosshairSpread;
 
 		if (HUDPackage.CrosshairCenter)
-			DrawCrosshair(HUDPackage.CrosshairCenter, ViewportCenter, {});
+			DrawCrosshair(HUDPackage.CrosshairCenter, ViewportCenter, {}, HUDPackage.CrosshairColor);
 
 		if (HUDPackage.CrosshairTop)
-			DrawCrosshair(HUDPackage.CrosshairTop, ViewportCenter, { 0.f, -SpreadScaled });
+			DrawCrosshair(HUDPackage.CrosshairTop, ViewportCenter, { 0.f, -SpreadScaled }, HUDPackage.CrosshairColor);
 
 		if (HUDPackage.CrosshairBottom)
-			DrawCrosshair(HUDPackage.CrosshairBottom, ViewportCenter, { 0, SpreadScaled });
+			DrawCrosshair(HUDPackage.CrosshairBottom, ViewportCenter, { 0, SpreadScaled }, HUDPackage.CrosshairColor);
 
 		if (HUDPackage.CrosshairRight)
-			DrawCrosshair(HUDPackage.CrosshairRight, ViewportCenter, { SpreadScaled, 0.f });
+			DrawCrosshair(HUDPackage.CrosshairRight, ViewportCenter, { SpreadScaled, 0.f }, HUDPackage.CrosshairColor);
 
 		if (HUDPackage.CrosshairLeft)
-			DrawCrosshair(HUDPackage.CrosshairLeft, ViewportCenter, { -SpreadScaled, 0.f });
+			DrawCrosshair(HUDPackage.CrosshairLeft, ViewportCenter, { -SpreadScaled, 0.f }, HUDPackage.CrosshairColor);
 	}
 }
 
-void ABlasterHUD::DrawCrosshair(UTexture2D* Texture, const FVector2D& ViewPortCenter, const FVector2D& Spread)
+void ABlasterHUD::DrawCrosshair(UTexture2D* Texture,
+                                const FVector2D& ViewPortCenter, const FVector2D& Spread,
+                                const FLinearColor& CrosshairColor)
 {
 	const float TextureWidth = Texture->GetSizeX();
 	const float TextureHeight = Texture->GetSizeY();
@@ -47,5 +49,6 @@ void ABlasterHUD::DrawCrosshair(UTexture2D* Texture, const FVector2D& ViewPortCe
 	            TextureWidth, TextureHeight,
 	            0.f, 0.f,
 	            1.f, 1.f,
-	            FLinearColor::White);
+	            CrosshairColor
+	);
 }

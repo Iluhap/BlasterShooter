@@ -23,7 +23,7 @@ private:
 	void UpdateCombatComponentVariables();
 	void UpdateMovementVariables();
 	void UpdateLeftHandTransform();
-	void UpdateRightHandTransform();
+	void UpdateRightHandTransform(float DeltaSeconds);
 	void UpdateAimOffset(float DeltaSeconds);
 
 
