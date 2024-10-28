@@ -28,7 +28,7 @@ public:
 	void SetFiring(bool bIsFiring);
 
 	void TraceUnderCrosshair(FHitResult& HitResult) const;
-	
+
 public:
 	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
 
@@ -65,6 +65,8 @@ public: // Getters
 	bool IsAiming() const;
 	bool IsFiring() const;
 
+	FORCEINLINE FVector GetHitTarget() const { return HitTargetLocation; }
+
 private:
 	UPROPERTY()
 	class ABlasterCharacter* Character;
@@ -89,6 +91,8 @@ private:
 
 	float CrosshairInAirFactor;
 	float CrosshairInAirFactorMax;
+
+	FVector HitTargetLocation;
 
 private:
 	UPROPERTY(EditAnywhere)

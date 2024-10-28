@@ -28,6 +28,7 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	UpdateMovementVariables();
 	UpdateCombatComponentVariables();
 	UpdateLeftHandTransform();
+	UpdateRightHandTransform();
 	UpdateAimOffset(DeltaSeconds);
 }
 
@@ -51,6 +52,26 @@ void UBlasterAnimInstance::UpdateLeftHandTransform()
 			LeftHandTransform.SetLocation(OutPosition);
 			LeftHandTransform.SetRotation(FQuat { OutRotator });
 		}
+	}
+}
+
+void UBlasterAnimInstance::UpdateRightHandTransform()
+{
+	if (not(IsValid(BlasterCharacter) and BlasterCharacter->IsLocallyControlled() and IsValid(EquippedWeapon)))
+		return;
+
+	bLocallyControlled = true;
+	
+	const auto* WeaponMesh = EquippedWeapon->FindComponentByClass<USkeletalMeshComponent>();
+
+	if (const auto* CombatComponent = BlasterCharacter->FindComponentByClass<UCombatComponent>();
+		IsValid(CombatComponent))
+	{
+		const FTransform RightHandTransform = WeaponMesh->GetSocketTransform(FName { "Hand_R" }, RTS_World);
+		const FVector RightHandLocation = RightHandTransform.GetLocation();
+		const FVector Target = RightHandLocation + (RightHandLocation - CombatComponent->GetHitTarget());
+
+		RightHandRotation = UKismetMathLibrary::FindLookAtRotation(RightHandTransform.GetLocation(), Target);
 	}
 }
 

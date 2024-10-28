@@ -57,6 +57,14 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 	UpdateCrosshairFactors(DeltaTime);
 	SetHUDCrosshair(DeltaTime);
+
+	if (IsValid(Character) and Character->IsLocallyControlled())
+	{
+		FHitResult TraceResult;
+		TraceUnderCrosshair(TraceResult);
+
+		HitTargetLocation = TraceResult.ImpactPoint;
+	}
 }
 
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
@@ -192,7 +200,7 @@ void UCombatComponent::SetHUDCrosshair(float DeltaTime)
 				HUDPackage.CrosshairRight = EquippedWeapon->CrosshairRight;
 				HUDPackage.CrosshairLeft = EquippedWeapon->CrosshairLeft;
 			}
-			
+
 			HUDPackage.CrosshairSpread = CrosshairVelocityFactor + CrosshairInAirFactor;
 
 			HUD->SetHUDPackage(HUDPackage);

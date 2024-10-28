@@ -23,7 +23,9 @@ private:
 	void UpdateCombatComponentVariables();
 	void UpdateMovementVariables();
 	void UpdateLeftHandTransform();
+	void UpdateRightHandTransform();
 	void UpdateAimOffset(float DeltaSeconds);
+
 
 private:
 	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
@@ -67,6 +69,12 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	ETurningInPlace TurningInPlace;
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	FRotator RightHandRotation;
+	
+	UPROPERTY(BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	bool bLocallyControlled;
 	
 	FRotator CharacterRotationLastFrame;
 	FRotator CharacterRotation;
