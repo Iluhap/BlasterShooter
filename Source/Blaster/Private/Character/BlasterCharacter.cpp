@@ -5,6 +5,7 @@
 #include "EnhancedInputComponent.h"
 #include "InputMappingContext.h"
 #include "InputActionValue.h"
+#include "Blaster/Blaster.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/CombatComponent.h"
 #include "Components/WidgetComponent.h"
@@ -38,8 +39,11 @@ ABlasterCharacter::ABlasterCharacter()
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+
+	GetMesh()->SetCollisionObjectType(ECC_SkeletalMesh);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	GetMesh()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 
@@ -92,6 +96,21 @@ void ABlasterCharacter::PlayFireMontage(bool IsAiming)
 	{
 		AnimInstance->Montage_Play(FireWeaponMontage);
 		const FName SectionName = IsAiming ? FName { "RifleAim" } : FName { "RifleHip" };
+
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
+void ABlasterCharacter::PlayHitReactMontage()
+{
+	if (not IsValid(Combat) or not Combat->IsWeaponEquipped())
+		return;
+
+	if (auto* AnimInstance = GetMesh()->GetAnimInstance();
+		IsValid(AnimInstance) and IsValid(HitReactMontage))
+	{
+		AnimInstance->Montage_Play(HitReactMontage);
+		const FName SectionName = FName { "FromFront" };
 
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
@@ -230,6 +249,11 @@ void ABlasterCharacter::StopFire()
 	{
 		Combat->SetFiring(false);
 	}
+}
+
+void ABlasterCharacter::MulticastHit_Implementation()
+{
+	PlayHitReactMontage();
 }
 
 bool ABlasterCharacter::IsWeaponEquipped() const

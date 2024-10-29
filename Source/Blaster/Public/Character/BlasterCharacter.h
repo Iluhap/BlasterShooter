@@ -24,9 +24,14 @@ public:
 	virtual void Jump() override;
 
 	void PlayFireMontage(bool IsAiming);
+	
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastHit();
 
 public:
 	void SetOverlappingWeapon(class AWeapon* Weapon);
+
+	
 
 protected:
 	virtual void BeginPlay() override;
@@ -65,6 +70,8 @@ private:
 	
 	void HideCharacter(bool bHide);
 
+	void PlayHitReactMontage();
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	TObjectPtr<class USpringArmComponent> CameraArm;
@@ -81,6 +88,9 @@ private:
 private:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	TObjectPtr<UAnimMontage> FireWeaponMontage;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	TObjectPtr<UAnimMontage> HitReactMontage;
 
 private:
 	UPROPERTY(ReplicatedUsing=OnRep_OverlappingWeapon)
