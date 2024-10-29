@@ -31,7 +31,7 @@ public:
 public:
 	void SetOverlappingWeapon(class AWeapon* Weapon);
 
-	
+	virtual void OnRep_ReplicateMovement() override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -57,11 +57,13 @@ private:
 public:
 	bool IsWeaponEquipped() const;
 	void AimOffset(float DeltaTime);
+	void SimProxiesTurn();
 
 	FORCEINLINE float GetAimOffsetYaw() const { return AimOffsetYaw; }
 	FORCEINLINE float GetAimOffsetPitch() const { return AimOffsetPitch; }
 
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; };
+	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; };
 
 private:
 	void TurnInPlace(float DeltaTime);
@@ -71,6 +73,10 @@ private:
 	void HideCharacter(bool bHide);
 
 	void PlayHitReactMontage();
+
+	void CalculateAimOffsetPitch();
+
+	float GetSpeed() const;
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -106,6 +112,14 @@ private:
 
 	UPROPERTY(EditAnywhere, Category=Camera)
 	float CameraThreshold = 200.f;
+
+	bool bRotateRootBone;
+	float TurnThreshold = 0.5f;
+	FRotator ProxyRotationLastFrame;
+	FRotator ProxyRotation;
+	float ProxyYaw;
+
+	float TimeSinceLastMovementRep;
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))

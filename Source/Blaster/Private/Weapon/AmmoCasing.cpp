@@ -4,7 +4,6 @@
 #include "Weapon/AmmoCasing.h"
 
 #include "Kismet/GameplayStatics.h"
-#include "Sound/SoundCue.h"
 
 
 AAmmoCasing::AAmmoCasing()

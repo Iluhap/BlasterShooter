@@ -8,7 +8,6 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
-#include "Sound/SoundCue.h"
 #include "Blaster/Blaster.h"
 
 

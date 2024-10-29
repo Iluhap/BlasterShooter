@@ -52,6 +52,8 @@ public:
 public:
 	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; };
 	FORCEINLINE float GetZoomInterpSpeed() const { return ZoomInterpSpeed; };
+	FORCEINLINE float GetFireRate() const { return FireRate; };
+	FORCEINLINE float IsAutomatic() const { return bAutomatic; };
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category= "Weapon Properties")
@@ -94,4 +96,10 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float ZoomInterpSpeed = 20.f;
+
+	UPROPERTY(EditAnywhere, Category=Properties)
+	float FireRate;
+	
+	UPROPERTY(EditAnywhere, Category=Properties)
+	bool bAutomatic;
 };

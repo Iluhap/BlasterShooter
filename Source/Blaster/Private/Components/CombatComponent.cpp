@@ -48,6 +48,8 @@ UCombatComponent::UCombatComponent()
 	TraceStartOffset = 50.f;
 
 	HUDPackage = {};
+
+	bCanFire = true;
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -148,13 +150,7 @@ void UCombatComponent::SetFiring(bool bIsFiring)
 
 	if (bFiring)
 	{
-		FHitResult TraceResult;
-		TraceUnderCrosshair(TraceResult);
-
-		ServerFire(TraceResult.ImpactPoint);
-
-		CrosshairShootingFactor = FMath::Min(CrosshairShootingFactor + CrosshairShootingFactorStep,
-		                                     CrosshairShootingFactorMax);
+		Fire();
 	}
 }
 
@@ -300,6 +296,18 @@ void UCombatComponent::UpdateCrosshairShootingFactor(float DeltaTime)
 	CrosshairShootingFactor = FMath::FInterpTo(CrosshairShootingFactor, 0.f, DeltaTime, 10.f);
 }
 
+void UCombatComponent::UpdateCrosshairColor(const FHitResult& TraceResult)
+{
+	if (TraceResult.GetActor() and TraceResult.GetActor()->Implements<UInteractWithCrosshairInterface>())
+	{
+		HUDPackage.CrosshairColor = FLinearColor::Red;
+	}
+	else
+	{
+		HUDPackage.CrosshairColor = FLinearColor::White;
+	}
+}
+
 void UCombatComponent::InterpFOV(float DeltaTime)
 {
 	if (not IsValid(EquippedWeapon))
@@ -308,12 +316,12 @@ void UCombatComponent::InterpFOV(float DeltaTime)
 	if (bAiming)
 	{
 		CurrentFOV = FMath::FInterpTo(CurrentFOV, EquippedWeapon->GetZoomedFOV(),
-		                              DeltaTime, EquippedWeapon->GetZoomInterpSpeed());
+									  DeltaTime, EquippedWeapon->GetZoomInterpSpeed());
 	}
 	else
 	{
 		CurrentFOV = FMath::FInterpTo(CurrentFOV, DefaultFOV,
-		                              DeltaTime, ZoomInterpSpeed);
+									  DeltaTime, ZoomInterpSpeed);
 	}
 	if (IsValid(Character))
 	{
@@ -325,15 +333,41 @@ void UCombatComponent::InterpFOV(float DeltaTime)
 	}
 }
 
-void UCombatComponent::UpdateCrosshairColor(const FHitResult& TraceResult)
+void UCombatComponent::Fire()
 {
-	if (TraceResult.GetActor() and TraceResult.GetActor()->Implements<UInteractWithCrosshairInterface>())
+	if (IsWeaponEquipped() and bCanFire)
 	{
-		HUDPackage.CrosshairColor = FLinearColor::Red;
+		bCanFire = false;
+
+		ServerFire(HitTargetLocation);
+
+		CrosshairShootingFactor = FMath::Min(CrosshairShootingFactor + CrosshairShootingFactorStep,
+		                                     CrosshairShootingFactorMax);
+		StartFireTimer();
 	}
-	else
+}
+
+void UCombatComponent::StartFireTimer()
+{
+	if (not IsWeaponEquipped())
+		return;
+
+	const float FireDelay = 60.f / EquippedWeapon->GetFireRate();
+
+	GetWorld()->GetTimerManager().SetTimer(FireTimerHandle,
+	                                       this, &UCombatComponent::FireTimerFinished,
+	                                       FireDelay, true);
+}
+
+void UCombatComponent::FireTimerFinished()
+{
+	if (not IsWeaponEquipped())
+		return;
+
+	bCanFire = true;
+	if (bFiring and EquippedWeapon->IsAutomatic())
 	{
-		HUDPackage.CrosshairColor = FLinearColor::White;
+		Fire();
 	}
 }
 

@@ -77,6 +77,31 @@ void ABlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(ABlasterCharacter, Combat);
 }
 
+void ABlasterCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
+void ABlasterCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (GetLocalRole() > ROLE_SimulatedProxy and IsLocallyControlled())
+	{
+		AimOffset(DeltaTime);
+	}
+	else
+	{
+		TimeSinceLastMovementRep += DeltaTime;
+		if (TimeSinceLastMovementRep > 0.25f)
+			OnRep_ReplicateMovement();
+
+		CalculateAimOffsetPitch();
+	}
+
+	HideCharacterIfCameraClose();
+}
+
 void ABlasterCharacter::Jump()
 {
 	if (bIsCrouched)
@@ -116,17 +141,24 @@ void ABlasterCharacter::PlayHitReactMontage()
 	}
 }
 
-void ABlasterCharacter::BeginPlay()
+void ABlasterCharacter::CalculateAimOffsetPitch()
 {
-	Super::BeginPlay();
+	AimOffsetPitch = GetBaseAimRotation().Pitch;
+
+	if (AimOffsetPitch > 90.f and not IsLocallyControlled())
+	{
+		const FVector2D InRange { 270.f, 360.f };
+		const FVector2D OutRange { -90.f, 0.f };
+
+		AimOffsetPitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AimOffsetPitch);
+	}
 }
 
-void ABlasterCharacter::Tick(float DeltaTime)
+float ABlasterCharacter::GetSpeed() const
 {
-	Super::Tick(DeltaTime);
-
-	AimOffset(DeltaTime);
-	HideCharacterIfCameraClose();
+	FVector Velocity = GetVelocity();
+	Velocity.Z = 0.f;
+	return Velocity.Size();
 }
 
 void ABlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
@@ -147,6 +179,15 @@ void ABlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 			OverlappingWeapon->ShowPickupWidget(true);
 		}
 	}
+}
+
+void ABlasterCharacter::OnRep_ReplicateMovement()
+{
+	Super::OnRep_ReplicateMovement();
+
+	SimProxiesTurn();
+
+	TimeSinceLastMovementRep = 0;
 }
 
 void ABlasterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
@@ -266,14 +307,13 @@ void ABlasterCharacter::AimOffset(float DeltaTime)
 	if (Combat and not Combat->IsWeaponEquipped())
 		return;
 
-	FVector Velocity = GetVelocity();
-	Velocity.Z = 0.f;
-
-	const float Speed = Velocity.Size();
+	const float Speed = GetSpeed();
 	const bool IsInAir = GetCharacterMovement()->IsFalling();
 
 	if (Speed == 0.f and not IsInAir)
 	{
+		bRotateRootBone = true;
+
 		const FRotator CurrentAimRotation { 0.f, GetBaseAimRotation().Yaw, 0.f };
 		const FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(
 			CurrentAimRotation, StartingAimRotation);
@@ -290,6 +330,8 @@ void ABlasterCharacter::AimOffset(float DeltaTime)
 	}
 	if (Speed > 0.f or IsInAir)
 	{
+		bRotateRootBone = false;
+
 		StartingAimRotation = { 0.f, GetBaseAimRotation().Yaw, 0.f };
 		AimOffsetYaw = 0.f;
 		bUseControllerRotationYaw = true;
@@ -297,15 +339,49 @@ void ABlasterCharacter::AimOffset(float DeltaTime)
 		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 	}
 
-	AimOffsetPitch = GetBaseAimRotation().Pitch;
+	CalculateAimOffsetPitch();
+}
 
-	if (AimOffsetPitch > 90.f and not IsLocallyControlled())
+void ABlasterCharacter::SimProxiesTurn()
+{
+	if (not IsValid(Combat) or not Combat->IsWeaponEquipped())
+		return;
+
+	bRotateRootBone = false;
+
+	if (GetSpeed() > 0.f)
 	{
-		const FVector2D InRange { 270.f, 360.f };
-		const FVector2D OutRange { -90.f, 0.f };
-
-		AimOffsetPitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AimOffsetPitch);
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		return;
 	}
+
+	CalculateAimOffsetPitch();
+
+	ProxyRotationLastFrame = ProxyRotation;
+	ProxyRotation = GetActorRotation();
+
+	ProxyYaw = UKismetMathLibrary::NormalizedDeltaRotator(ProxyRotation, ProxyRotationLastFrame).Yaw;
+
+	UE_LOG(LogTemp, Warning, TEXT("ProxyYaw: %f"), ProxyYaw);
+
+	if (FMath::Abs(ProxyYaw) > TurnThreshold)
+	{
+		if (ProxyYaw > TurnThreshold)
+		{
+			TurningInPlace = ETurningInPlace::ETIP_Right;
+		}
+		else if (ProxyYaw < -TurnThreshold)
+		{
+			TurningInPlace = ETurningInPlace::ETIP_Left;
+		}
+		else
+		{
+			TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		}
+		return;
+	}
+
+	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 }
 
 void ABlasterCharacter::TurnInPlace(float DeltaTime)

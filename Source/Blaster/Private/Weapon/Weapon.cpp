@@ -31,6 +31,9 @@ AWeapon::AWeapon()
 
 	PickupWidget = CreateDefaultSubobject<UWidgetComponent>("Pick Widget");
 	PickupWidget->SetupAttachment(RootComponent);
+
+	FireRate = 600.f;
+	bAutomatic = false;
 }
 
 void AWeapon::BeginPlay()

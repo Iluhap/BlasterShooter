@@ -30,7 +30,12 @@ public:
 
 	void TraceUnderCrosshair(FHitResult& HitResult);
 
-public:
+public: // Getters
+	bool IsWeaponEquipped() const;
+	bool IsAiming() const;
+	bool IsFiring() const;
+
+	FORCEINLINE FVector GetHitTarget() const { return HitTargetLocation; }
 	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
 
 private:
@@ -62,18 +67,14 @@ private:
 	void UpdateCrosshairInAirFactor(float DeltaTime);
 	void UpdateCrosshairAimFactor(float DeltaTime);
 	void UpdateCrosshairShootingFactor(float DeltaTime);
-
+	void UpdateCrosshairColor(const FHitResult& TraceResult);
+	
 	void InterpFOV(float DeltaTime);
 
-	void UpdateCrosshairColor(const FHitResult& TraceResult);
-
-public: // Getters
-	bool IsWeaponEquipped() const;
-	bool IsAiming() const;
-	bool IsFiring() const;
-
-	FORCEINLINE FVector GetHitTarget() const { return HitTargetLocation; }
-
+	void Fire();
+	void StartFireTimer();
+	void FireTimerFinished();
+	
 private:
 	UPROPERTY()
 	class ABlasterCharacter* Character;
@@ -147,4 +148,12 @@ private:
 
 	UPROPERTY(EditAnywhere, Category=Zoom)
 	float ZoomInterpSpeed = 20.f;
+
+	/*
+	 * Automatic Fire
+	 */
+
+	FTimerHandle FireTimerHandle;
+
+	bool bCanFire;
 };

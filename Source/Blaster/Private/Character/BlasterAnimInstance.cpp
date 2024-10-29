@@ -75,8 +75,9 @@ void UBlasterAnimInstance::UpdateRightHandTransform(float DeltaSeconds)
 		const FRotator LookAtRotation =
 			UKismetMathLibrary::FindLookAtRotation(RightHandTransform.GetLocation(), Target);
 
-		RightHandRotation = FMath::RInterpTo(RightHandRotation, LookAtRotation,
-		                                     DeltaSeconds, 30.f);
+		// RightHandRotation = FMath::RInterpTo(RightHandRotation, LookAtRotation,
+		//                                      DeltaSeconds, 200.f);
+		RightHandRotation = LookAtRotation;
 	}
 }
 
@@ -103,6 +104,8 @@ void UBlasterAnimInstance::UpdateAimOffset(float DeltaSeconds)
 	AimOffsetPitch = BlasterCharacter->GetAimOffsetPitch();
 
 	TurningInPlace = BlasterCharacter->GetTurningInPlace();
+
+	bRotateRootBone = BlasterCharacter->ShouldRotateRootBone();
 }
 
 void UBlasterAnimInstance::UpdateCombatComponentVariables()

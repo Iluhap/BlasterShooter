@@ -4,7 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Sound/SoundCue.h"
 #include "AmmoCasing.generated.h"
+
 
 UCLASS()
 class BLASTER_API AAmmoCasing : public AActor
