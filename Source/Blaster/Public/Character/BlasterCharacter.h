@@ -24,14 +24,22 @@ public:
 	virtual void Jump() override;
 
 	void PlayFireMontage(bool IsAiming);
-	
-	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastHit();
 
 public:
 	void SetOverlappingWeapon(class AWeapon* Weapon);
 
 	virtual void OnRep_ReplicateMovement() override;
+
+public:
+	bool IsWeaponEquipped() const;
+	void AimOffset(float DeltaTime);
+	void SimProxiesTurn();
+
+	FORCEINLINE float GetAimOffsetYaw() const { return AimOffsetYaw; }
+	FORCEINLINE float GetAimOffsetPitch() const { return AimOffsetPitch; }
+
+	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; };
+	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; };
 
 protected:
 	virtual void BeginPlay() override;
@@ -54,22 +62,11 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerEquip();
 
-public:
-	bool IsWeaponEquipped() const;
-	void AimOffset(float DeltaTime);
-	void SimProxiesTurn();
-
-	FORCEINLINE float GetAimOffsetYaw() const { return AimOffsetYaw; }
-	FORCEINLINE float GetAimOffsetPitch() const { return AimOffsetPitch; }
-
-	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; };
-	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; };
-
 private:
 	void TurnInPlace(float DeltaTime);
 
 	void HideCharacterIfCameraClose();
-	
+
 	void HideCharacter(bool bHide);
 
 	void PlayHitReactMontage();
@@ -77,6 +74,16 @@ private:
 	void CalculateAimOffsetPitch();
 
 	float GetSpeed() const;
+
+	UFUNCTION()
+	void OnRep_Health();
+
+	UFUNCTION()
+	void ReceiveDamage(AActor* DamagedActor,
+					   float Damage, const class UDamageType* DamageType,
+					   class AController* InstigatedBy, AActor* DamageCauser);
+
+	void UpdateHUDHealth();
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -99,6 +106,10 @@ private:
 	TObjectPtr<UAnimMontage> HitReactMontage;
 
 private:
+
+	UPROPERTY()
+	class ABlasterPlayerController* BlasterPlayerController;
+	
 	UPROPERTY(ReplicatedUsing=OnRep_OverlappingWeapon)
 	AWeapon* OverlappingWeapon;
 
@@ -120,6 +131,12 @@ private:
 	float ProxyYaw;
 
 	float TimeSinceLastMovementRep;
+
+	UPROPERTY(EditAnywhere, Category="PlayerStats")
+	float MaxHealth = 100.f;
+
+	UPROPERTY(ReplicatedUsing=OnRep_Health, VisibleAnywhere, Category="PlayerStats")
+	float Health;
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))

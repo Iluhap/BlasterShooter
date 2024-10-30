@@ -45,14 +45,25 @@ public:
 
 	void SetHUDPackage(const FHUDPackage& NewHUDPackage) { HUDPackage = NewHUDPackage; };
 
+protected:
+	virtual void BeginPlay() override;
+
 private:
 	void DrawCrosshair(UTexture2D* Texture,
 		const FVector2D& ViewPortCenter, const FVector2D& Spread,
 		const FLinearColor& CrosshairColor);
 
+	void AddCharacterOverlay();
+	
 private:
 	FHUDPackage HUDPackage;
 
 	UPROPERTY(EditAnywhere)
 	float CrosshairSpreadMax = 16.f;
+
+	UPROPERTY(EditAnywhere, Category="Player Stats")
+	TSubclassOf<class UUserWidget> CharacterOverlayClass;
+
+public:
+	TObjectPtr<class UCharacterOverlay> CharacterOverlay;
 };

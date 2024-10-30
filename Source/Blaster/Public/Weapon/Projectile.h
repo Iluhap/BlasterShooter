@@ -28,6 +28,10 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 
+protected:
+	UPROPERTY(EditAnywhere, Category=Damage)
+	float Damage;
+
 private:
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<class UBoxComponent> CollisionBox;

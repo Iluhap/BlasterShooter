@@ -14,10 +14,19 @@ class BLASTER_API ABlasterPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
+public:
+	void SetHUDHealth(const float& Health, const float& MaxHealth);
+	
 protected:
 	virtual void BeginPlay() override;
 
 private:
+	void SetHUD();
+
+private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputMappingContext> InputMapping;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<class ABlasterHUD> BlasterHUD;
 };

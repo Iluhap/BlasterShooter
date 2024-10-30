@@ -29,6 +29,8 @@ AProjectile::AProjectile()
 
 	MovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>("Movement Component");
 	MovementComponent->bRotationFollowsVelocity = true;
+
+	Damage = 20.f; 
 }
 
 void AProjectile::Destroyed()
@@ -68,12 +70,6 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComponent,
                         AActor* OtherActor, UPrimitiveComponent* OtherComp,
                         FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (auto* BlasterCharacter = Cast<ABlasterCharacter>(OtherActor);
-		IsValid(BlasterCharacter))
-	{
-		BlasterCharacter->MulticastHit();
-	}
-	
 	Destroy();
 }
 
