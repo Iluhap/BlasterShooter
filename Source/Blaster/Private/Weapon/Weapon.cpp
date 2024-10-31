@@ -20,6 +20,7 @@ AWeapon::AWeapon()
 	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>("Weapon Mesh");
 	SetRootComponent(Mesh);
 
+	Mesh->SetCollisionObjectType(ECC_WorldDynamic);
 	Mesh->SetCollisionResponseToAllChannels(ECR_Block);
 	Mesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -108,6 +109,16 @@ void AWeapon::SetState(const EWeaponState NewState)
 		{
 			ShowPickupWidget(false);
 			AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			SetMeshCollision(false);
+			break;
+		}
+	case EWeaponState::EWS_Dropped:
+		{
+			if (HasAuthority())
+			{
+				AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+			}
+			SetMeshCollision(true);
 			break;
 		}
 	default: break;
@@ -134,5 +145,42 @@ void AWeapon::Fire(const FVector& HitTarget)
 				SocketTransform.GetRotation().Rotator()
 			);
 		}
+	}
+}
+
+void AWeapon::Dropped()
+{
+	SetState(EWeaponState::EWS_Dropped);
+	FDetachmentTransformRules DetachRules { EDetachmentRule::KeepWorld, true };
+	Mesh->DetachFromComponent(DetachRules);
+	SetOwner(nullptr);
+}
+
+void AWeapon::SetMeshCollision(bool bEnable)
+{
+	const auto CollisionEnabled = bEnable ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision;
+
+	Mesh->SetCollisionEnabled(CollisionEnabled);
+
+	Mesh->SetSimulatePhysics(bEnable);
+	Mesh->SetEnableGravity(bEnable);
+}
+
+void AWeapon::OnRep_State()
+{
+	switch (State)
+	{
+	case EWeaponState::EWS_Equipped:
+		{
+			ShowPickupWidget(false);
+			SetMeshCollision(false);
+			break;
+		}
+	case EWeaponState::EWS_Dropped:
+		{
+			SetMeshCollision(true);
+			break;
+		}
+	default: break;
 	}
 }

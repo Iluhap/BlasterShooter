@@ -18,4 +18,7 @@ public:
 	virtual void PlayerEliminated(class ABlasterCharacter* EliminatedCharacter,
 	                              class ABlasterPlayerController* VictimController,
 	                              class ABlasterPlayerController* AttackerController);
+
+
+	void RequestRespawn(ACharacter* EliminatedCharacter, AController* EliminatedController);
 };

@@ -4,6 +4,7 @@
 #include "Character/BlasterPlayerController.h"
 
 #include "EnhancedInputSubsystems.h"
+#include "Character/BlasterCharacter.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "HUD/BlasterHUD.h"
@@ -24,6 +25,19 @@ void ABlasterPlayerController::BeginPlay()
 	SetHUD();
 }
 
+void ABlasterPlayerController::OnPossess(APawn* PawnToPossess)
+{
+	Super::OnPossess(PawnToPossess);
+
+	SetHUD();
+
+	if (const auto* BlasterCharacter = Cast<ABlasterCharacter>(PawnToPossess);
+		IsValid(BlasterCharacter))
+	{
+		SetHUDHealth(BlasterCharacter->GetHealth(), BlasterCharacter->GetMaxHealth());
+	}
+}
+
 void ABlasterPlayerController::SetHUD()
 {
 	if (not IsValid(BlasterHUD))
@@ -35,7 +49,7 @@ void ABlasterPlayerController::SetHUD()
 void ABlasterPlayerController::SetHUDHealth(const float& Health, const float& MaxHealth)
 {
 	SetHUD();
-	
+
 	const bool bHUDValid = BlasterHUD
 		and BlasterHUD->CharacterOverlay
 		and BlasterHUD->CharacterOverlay->HealthBar
@@ -46,8 +60,8 @@ void ABlasterPlayerController::SetHUDHealth(const float& Health, const float& Ma
 		const float HealthPercent = Health / MaxHealth;
 		BlasterHUD->CharacterOverlay->HealthBar->SetPercent(HealthPercent);
 		const FString HealthText = FString::Printf(TEXT("%d/%d"),
-		                                     FMath::CeilToInt(Health),
-		                                     FMath::CeilToInt(MaxHealth));
+		                                           FMath::CeilToInt(Health),
+		                                           FMath::CeilToInt(MaxHealth));
 
 		BlasterHUD->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText));
 	}

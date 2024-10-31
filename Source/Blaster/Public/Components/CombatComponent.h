@@ -74,6 +74,10 @@ private:
 	void Fire();
 	void StartFireTimer();
 	void FireTimerFinished();
+
+private:
+	UFUNCTION()
+	void OnRep_EquippedWeapon();
 	
 private:
 	UPROPERTY()
@@ -85,7 +89,7 @@ private:
 	UPROPERTY()
 	class ABlasterHUD* HUD;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing=OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
 
 	UPROPERTY(Replicated)

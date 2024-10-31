@@ -11,9 +11,11 @@
 #include "Components/CombatComponent.h"
 #include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameMode/BlasterGameMode.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "Weapon/Weapon.h"
+
 
 ABlasterCharacter::ABlasterCharacter()
 {
@@ -46,13 +48,22 @@ ABlasterCharacter::ABlasterCharacter()
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 
+	CameraThreshold = 200.f;
+
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+	TurnThreshold = 0.5f;
 
 	NetUpdateFrequency = 66.f;
 	MinNetUpdateFrequency = 33.f;
 
 	MaxHealth = 100.f;
 	Health = MaxHealth;
+
+	EliminationDelay = 1.5f;
+
+	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>("DissolveTimeline");
+	BaseDissolveValue = 0.55;
+	BaseDissolveGlow = 200.f;
 }
 
 void ABlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -123,7 +134,7 @@ void ABlasterCharacter::Jump()
 	Super::Jump();
 }
 
-void ABlasterCharacter::PlayFireMontage(bool IsAiming)
+void ABlasterCharacter::PlayFireMontage(bool IsAiming) const
 {
 	if (not IsValid(Combat) or not Combat->IsWeaponEquipped())
 		return;
@@ -138,7 +149,98 @@ void ABlasterCharacter::PlayFireMontage(bool IsAiming)
 	}
 }
 
-void ABlasterCharacter::PlayHitReactMontage()
+void ABlasterCharacter::PlayEliminationMontage() const
+{
+	const TArray<FName> SectionNames = { "Elim1", "Elim2", "Elim3" };
+
+	if (auto* AnimInstance = GetMesh()->GetAnimInstance();
+		IsValid(AnimInstance) and IsValid(EliminationMontage))
+	{
+		AnimInstance->Montage_Play(EliminationMontage);
+
+		const FName SectionName = SectionNames[FMath::Rand32() % 3];
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
+void ABlasterCharacter::Eliminate()
+{
+
+	if (IsValid(Combat) and Combat->IsWeaponEquipped())
+	{
+		Combat->GetEquippedWeapon()->Dropped();
+	}
+	
+	MulticastEliminate();
+
+	GetWorld()->GetTimerManager().SetTimer(EliminationTimerHandle,
+	                                       this, &ABlasterCharacter::EliminationTimerFinished,
+	                                       EliminationDelay);
+}
+
+void ABlasterCharacter::MulticastEliminate_Implementation()
+{
+	bIsEliminated = true;
+	PlayEliminationMontage();
+
+	StartDissolve();
+
+	DisableMovement();
+}
+
+
+void ABlasterCharacter::EliminationTimerFinished()
+{
+	if (auto* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+		IsValid(BlasterGameMode))
+	{
+		BlasterGameMode->RequestRespawn(this, GetController());
+	}
+}
+
+void ABlasterCharacter::UpdateDissolveMaterial(float DissolveValue)
+{
+	SetDissolveParams(DissolveValue, BaseDissolveGlow);
+}
+
+void ABlasterCharacter::StartDissolve()
+{
+	if (IsValid(DissolveMaterialInstance))
+	{
+		DynamicDissolveMaterialInstance = UMaterialInstanceDynamic::Create(DissolveMaterialInstance, this);
+
+		GetMesh()->SetMaterial(0, DynamicDissolveMaterialInstance);
+		GetMesh()->SetMaterial(1, DynamicDissolveMaterialInstance);
+
+		SetDissolveParams(BaseDissolveValue, BaseDissolveGlow);
+	}
+
+	DissolveTrack.BindDynamic(this, &ABlasterCharacter::UpdateDissolveMaterial);
+	if (IsValid(DissolveCurve))
+	{
+		DissolveTimeline->AddInterpFloat(DissolveCurve, DissolveTrack);
+		DissolveTimeline->Play();
+	}
+}
+
+void ABlasterCharacter::SetDissolveParams(const float& Dissolve, const float& Glow)
+{
+	DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"), Dissolve);
+	DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Glow"), Glow);
+}
+
+void ABlasterCharacter::DisableMovement()
+{
+	GetCharacterMovement()->DisableMovement();
+	GetCharacterMovement()->StopMovementImmediately();
+
+	DisableInput(BlasterPlayerController);
+
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
+void ABlasterCharacter::PlayHitReactMontage() const
 {
 	if (not IsValid(Combat) or not Combat->IsWeaponEquipped())
 		return;
@@ -186,6 +288,22 @@ void ABlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const 
 
 	UpdateHUDHealth();
 	PlayHitReactMontage();
+
+	if (Health <= 0.f)
+	{
+		if (auto* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+			IsValid(BlasterGameMode))
+		{
+			BlasterPlayerController = IsValid(BlasterPlayerController)
+				                          ? Cast<ABlasterPlayerController>(GetController())
+				                          : BlasterPlayerController;
+
+			auto* AttackerController = Cast<ABlasterPlayerController>(InstigatedBy);
+
+			BlasterGameMode->PlayerEliminated(this, BlasterPlayerController,
+			                                  AttackerController);
+		}
+	}
 }
 
 void ABlasterCharacter::UpdateHUDHealth()

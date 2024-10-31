@@ -104,14 +104,6 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	if (not IsValid(Character) or not IsValid(WeaponToEquip)) return;
 
 	EquippedWeapon = WeaponToEquip;
-	EquippedWeapon->SetState(EWeaponState::EWS_Equipped);
-
-	auto* Socket = Character->GetMesh()->GetSocketByName(EquipSocketName);
-	Socket->AttachActor(EquippedWeapon, Character->GetMesh());
-
-	EquippedWeapon->SetOwner(Character);
-	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
-	Character->bUseControllerRotationYaw = true;
 
 	ServerEquipWeapon(WeaponToEquip);
 }
@@ -124,6 +116,18 @@ void UCombatComponent::ServerEquipWeapon_Implementation(AWeapon* WeaponToEquip)
 void UCombatComponent::NetMulticastEquipWeapon_Implementation(AWeapon* WeaponToEquip)
 {
 	EquippedWeapon = WeaponToEquip;
+
+	EquippedWeapon->SetState(EWeaponState::EWS_Equipped);
+
+	if (auto* Socket = Character->GetMesh()->GetSocketByName(EquipSocketName);
+		IsValid(Socket))
+	{
+		Socket->AttachActor(EquippedWeapon, Character->GetMesh());
+	}
+
+	EquippedWeapon->SetOwner(Character);
+	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+	Character->bUseControllerRotationYaw = true;
 }
 
 void UCombatComponent::SetAiming(bool bIsAiming)
@@ -316,12 +320,12 @@ void UCombatComponent::InterpFOV(float DeltaTime)
 	if (bAiming)
 	{
 		CurrentFOV = FMath::FInterpTo(CurrentFOV, EquippedWeapon->GetZoomedFOV(),
-									  DeltaTime, EquippedWeapon->GetZoomInterpSpeed());
+		                              DeltaTime, EquippedWeapon->GetZoomInterpSpeed());
 	}
 	else
 	{
 		CurrentFOV = FMath::FInterpTo(CurrentFOV, DefaultFOV,
-									  DeltaTime, ZoomInterpSpeed);
+		                              DeltaTime, ZoomInterpSpeed);
 	}
 	if (IsValid(Character))
 	{
@@ -368,6 +372,23 @@ void UCombatComponent::FireTimerFinished()
 	if (bFiring and EquippedWeapon->IsAutomatic())
 	{
 		Fire();
+	}
+}
+
+void UCombatComponent::OnRep_EquippedWeapon()
+{
+	if (IsValid(EquippedWeapon) and IsValid(Character))
+	{
+		EquippedWeapon->SetState(EWeaponState::EWS_Equipped);
+
+		if (auto* Socket = Character->GetMesh()->GetSocketByName(EquipSocketName);
+			IsValid(Socket))
+		{
+			Socket->AttachActor(EquippedWeapon, Character->GetMesh());
+		}
+
+		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+		Character->bUseControllerRotationYaw = false;
 	}
 }
 

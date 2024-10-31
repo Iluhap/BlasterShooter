@@ -19,6 +19,7 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
+	virtual void OnPossess(APawn* PawnToPossess) override;
 
 private:
 	void SetHUD();

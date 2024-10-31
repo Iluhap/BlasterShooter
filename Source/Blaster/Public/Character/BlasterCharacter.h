@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "BlasterTypes/TurningInPlace.h"
+#include "Components/TimelineComponent.h"
 #include "GameFramework/Character.h"
 #include "Interfaces/InteractWithCrosshairInterface.h"
 #include "BlasterCharacter.generated.h"
@@ -23,7 +24,13 @@ public:
 
 	virtual void Jump() override;
 
-	void PlayFireMontage(bool IsAiming);
+	void PlayFireMontage(bool IsAiming) const;
+	void PlayEliminationMontage() const;
+
+	void Eliminate();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastEliminate();
 
 public:
 	void SetOverlappingWeapon(class AWeapon* Weapon);
@@ -38,8 +45,11 @@ public:
 	FORCEINLINE float GetAimOffsetYaw() const { return AimOffsetYaw; }
 	FORCEINLINE float GetAimOffsetPitch() const { return AimOffsetPitch; }
 
-	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; };
-	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; };
+	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
+	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
+	FORCEINLINE bool IsEliminated() const { return bIsEliminated; }
+	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -69,7 +79,7 @@ private:
 
 	void HideCharacter(bool bHide);
 
-	void PlayHitReactMontage();
+	void PlayHitReactMontage() const;
 
 	void CalculateAimOffsetPitch();
 
@@ -80,10 +90,22 @@ private:
 
 	UFUNCTION()
 	void ReceiveDamage(AActor* DamagedActor,
-					   float Damage, const class UDamageType* DamageType,
-					   class AController* InstigatedBy, AActor* DamageCauser);
+	                   float Damage, const UDamageType* DamageType,
+	                   AController* InstigatedBy, AActor* DamageCauser);
 
 	void UpdateHUDHealth();
+
+	UFUNCTION()
+	void EliminationTimerFinished();
+
+	UFUNCTION()
+	void UpdateDissolveMaterial(float DissolveValue);
+
+	void StartDissolve();
+
+	void SetDissolveParams(const float& Dissolve, const float& Glow);
+
+	void DisableMovement();
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -105,11 +127,13 @@ private:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	TObjectPtr<UAnimMontage> HitReactMontage;
 
-private:
+	UPROPERTY(EditAnywhere, Category = Combat)
+	TObjectPtr<UAnimMontage> EliminationMontage;
 
+private:
 	UPROPERTY()
 	class ABlasterPlayerController* BlasterPlayerController;
-	
+
 	UPROPERTY(ReplicatedUsing=OnRep_OverlappingWeapon)
 	AWeapon* OverlappingWeapon;
 
@@ -122,10 +146,10 @@ private:
 	ETurningInPlace TurningInPlace;
 
 	UPROPERTY(EditAnywhere, Category=Camera)
-	float CameraThreshold = 200.f;
+	float CameraThreshold;
 
 	bool bRotateRootBone;
-	float TurnThreshold = 0.5f;
+	float TurnThreshold;
 	FRotator ProxyRotationLastFrame;
 	FRotator ProxyRotation;
 	float ProxyYaw;
@@ -133,10 +157,38 @@ private:
 	float TimeSinceLastMovementRep;
 
 	UPROPERTY(EditAnywhere, Category="PlayerStats")
-	float MaxHealth = 100.f;
+	float MaxHealth;
 
 	UPROPERTY(ReplicatedUsing=OnRep_Health, VisibleAnywhere, Category="PlayerStats")
 	float Health;
+
+	UPROPERTY(EditDefaultsOnly)
+	bool bIsEliminated;
+
+	UPROPERTY(EditAnywhere)
+	float EliminationDelay;
+
+	FTimerHandle EliminationTimerHandle;
+
+	FOnTimelineFloat DissolveTrack;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UTimelineComponent> DissolveTimeline;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UCurveFloat> DissolveCurve;
+
+	UPROPERTY(VisibleAnywhere, Category=Elimination)
+	TObjectPtr<UMaterialInstanceDynamic> DynamicDissolveMaterialInstance;
+
+	UPROPERTY(EditAnywhere, Category=Elimination)
+	TObjectPtr<UMaterialInstance> DissolveMaterialInstance;
+
+	UPROPERTY(EditAnywhere)
+	float BaseDissolveValue;
+
+	UPROPERTY(EditAnywhere)
+	float BaseDissolveGlow;
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))

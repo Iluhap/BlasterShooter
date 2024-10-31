@@ -139,4 +139,6 @@ void UBlasterAnimInstance::UpdateMovementVariables()
 
 	const float CurrentAcceleration = CharacterMovement->GetCurrentAcceleration().Size();
 	bIsAccelerating = CurrentAcceleration > 0.f;
+
+	bEliminated = BlasterCharacter->IsEliminated();
 }

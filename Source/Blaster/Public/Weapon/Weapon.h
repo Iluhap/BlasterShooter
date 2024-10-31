@@ -49,11 +49,19 @@ public:
 
 	virtual void Fire(const FVector& HitTarget);
 
+	void Dropped();
+
 public:
 	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; };
 	FORCEINLINE float GetZoomInterpSpeed() const { return ZoomInterpSpeed; };
 	FORCEINLINE float GetFireRate() const { return FireRate; };
 	FORCEINLINE float IsAutomatic() const { return bAutomatic; };
+
+private:
+	void SetMeshCollision(bool bEnable);
+
+	UFUNCTION()
+	void OnRep_State();
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category= "Weapon Properties")
@@ -62,7 +70,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category= "Weapon Properties")
 	TObjectPtr<class USphereComponent> AreaSphere;
 
-	UPROPERTY(VisibleAnywhere, Category= "Weapon Properties", Replicated)
+	UPROPERTY(ReplicatedUsing=OnRep_State, VisibleAnywhere, Category= "Weapon Properties")
 	EWeaponState State;
 
 	UPROPERTY(VisibleAnywhere, Category= "Weapon Properties")
@@ -99,7 +107,7 @@ private:
 
 	UPROPERTY(EditAnywhere, Category=Properties)
 	float FireRate;
-	
+
 	UPROPERTY(EditAnywhere, Category=Properties)
 	bool bAutomatic;
 };
