@@ -14,6 +14,7 @@
 #include "GameMode/BlasterGameMode.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "PlayerState/BlasterPlayerState.h"
 #include "Weapon/Weapon.h"
 
 
@@ -105,9 +106,23 @@ void ABlasterCharacter::BeginPlay()
 	}
 }
 
+void ABlasterCharacter::PollInit()
+{
+	if (not IsValid(BlasterPlayerState))
+	{
+		BlasterPlayerState = GetPlayerState<ABlasterPlayerState>();
+		if (IsValid(BlasterPlayerState))
+		{
+			BlasterPlayerState->AddToScore(0.f);
+		}
+	}
+}
+
 void ABlasterCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	PollInit();
 
 	if (GetLocalRole() > ROLE_SimulatedProxy and IsLocallyControlled())
 	{

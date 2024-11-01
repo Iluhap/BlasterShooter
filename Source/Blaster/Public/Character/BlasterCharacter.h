@@ -107,6 +107,8 @@ private:
 
 	void DisableMovement();
 
+	void PollInit();
+	
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	TObjectPtr<class USpringArmComponent> CameraArm;
@@ -133,6 +135,9 @@ private:
 private:
 	UPROPERTY()
 	class ABlasterPlayerController* BlasterPlayerController;
+	
+	UPROPERTY()
+	class ABlasterPlayerState* BlasterPlayerState;
 
 	UPROPERTY(ReplicatedUsing=OnRep_OverlappingWeapon)
 	AWeapon* OverlappingWeapon;
