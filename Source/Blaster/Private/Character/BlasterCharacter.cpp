@@ -114,6 +114,7 @@ void ABlasterCharacter::PollInit()
 		if (IsValid(BlasterPlayerState))
 		{
 			BlasterPlayerState->AddToScore(0.f);
+			BlasterPlayerState->AddToDefeats(0.f);
 		}
 	}
 }
