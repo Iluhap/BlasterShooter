@@ -92,3 +92,16 @@ void ABlasterPlayerController::SetHUDDefeats(int32 Defeats)
 		BlasterHUD->CharacterOverlay->DefeatsAmount->SetText(FText::FromString(DefeatsText));
 	}
 }
+
+void ABlasterPlayerController::SetHUDWeaponAmmo(int32 Ammo)
+{
+	SetHUD();
+
+	if (IsValid(BlasterHUD)
+		and IsValid(BlasterHUD->CharacterOverlay)
+		and IsValid(BlasterHUD->CharacterOverlay->WeaponAmmoAmount))
+	{
+		const auto AmmoText = FString::Printf(TEXT("%d"), Ammo);
+		BlasterHUD->CharacterOverlay->WeaponAmmoAmount->SetText(FText::FromString(AmmoText));
+	}
+}

@@ -51,17 +51,33 @@ public:
 
 	void Dropped();
 
+	void UpdateHUDAmmo();
+
+public:
+	bool IsEmpty() const;
+
 public:
 	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; };
 	FORCEINLINE float GetZoomInterpSpeed() const { return ZoomInterpSpeed; };
 	FORCEINLINE float GetFireRate() const { return FireRate; };
 	FORCEINLINE float IsAutomatic() const { return bAutomatic; };
 
+protected:
+	virtual void OnRep_Owner() override;
+
 private:
 	void SetMeshCollision(bool bEnable);
 
+	void SpendRound();
+
 	UFUNCTION()
 	void OnRep_State();
+
+	UFUNCTION()
+	void OnRep_Ammo();
+
+private:
+	void SetOwningController();
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category= "Weapon Properties")
@@ -99,6 +115,13 @@ public:
 	TObjectPtr<UTexture2D> CrosshairLeft;
 
 private:
+	UPROPERTY()
+	class ABlasterPlayerController* OwningBlasterPlayerController;
+
+	UPROPERTY()
+	class ABlasterCharacter* OwningBlasterCharacter;
+
+private:
 	UPROPERTY(EditAnywhere)
 	float ZoomedFOV = 30.f;
 
@@ -110,4 +133,10 @@ private:
 
 	UPROPERTY(EditAnywhere, Category=Properties)
 	bool bAutomatic;
+
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_Ammo)
+	int32 Ammo;
+
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_Ammo)
+	int32 MagazineCapacity;
 };

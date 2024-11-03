@@ -4,6 +4,7 @@
 #include "Weapon/Weapon.h"
 
 #include "Character/BlasterCharacter.h"
+#include "Character/BlasterPlayerController.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
@@ -35,6 +36,9 @@ AWeapon::AWeapon()
 
 	FireRate = 600.f;
 	bAutomatic = false;
+
+	MagazineCapacity = 30;
+	Ammo = MagazineCapacity;
 }
 
 void AWeapon::BeginPlay()
@@ -67,6 +71,7 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, State);
+	DOREPLIFETIME(AWeapon, Ammo);
 }
 
 void AWeapon::OnAreaBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -146,6 +151,8 @@ void AWeapon::Fire(const FVector& HitTarget)
 			);
 		}
 	}
+
+	SpendRound();
 }
 
 void AWeapon::Dropped()
@@ -154,6 +161,25 @@ void AWeapon::Dropped()
 	FDetachmentTransformRules DetachRules { EDetachmentRule::KeepWorld, true };
 	Mesh->DetachFromComponent(DetachRules);
 	SetOwner(nullptr);
+
+	OwningBlasterCharacter = nullptr;
+	OwningBlasterPlayerController = nullptr;
+}
+
+void AWeapon::OnRep_Owner()
+{
+	Super::OnRep_Owner();
+
+	if (not IsValid(Owner))
+	{
+		OwningBlasterCharacter = nullptr;
+		OwningBlasterPlayerController = nullptr;
+	}
+
+	if (IsValid(Owner))
+	{
+		UpdateHUDAmmo();
+	}
 }
 
 void AWeapon::SetMeshCollision(bool bEnable)
@@ -164,6 +190,46 @@ void AWeapon::SetMeshCollision(bool bEnable)
 
 	Mesh->SetSimulatePhysics(bEnable);
 	Mesh->SetEnableGravity(bEnable);
+}
+
+void AWeapon::SpendRound()
+{
+	Ammo = FMath::Clamp(Ammo - 1, 0, MagazineCapacity);
+
+	UpdateHUDAmmo();
+}
+
+void AWeapon::OnRep_Ammo()
+{
+	UpdateHUDAmmo();
+}
+
+void AWeapon::UpdateHUDAmmo()
+{
+	SetOwningController();
+	if (IsValid(OwningBlasterPlayerController))
+	{
+		OwningBlasterPlayerController->SetHUDWeaponAmmo(Ammo);
+	}
+}
+
+bool AWeapon::IsEmpty() const
+{
+	return Ammo <= 0;
+}
+
+void AWeapon::SetOwningController()
+{
+	OwningBlasterCharacter = not IsValid(OwningBlasterCharacter)
+		                         ? Cast<ABlasterCharacter>(GetOwner())
+		                         : OwningBlasterCharacter;
+
+	if (not IsValid(OwningBlasterCharacter))
+		return;
+
+	OwningBlasterPlayerController = not IsValid(OwningBlasterPlayerController)
+		                                ? Cast<ABlasterPlayerController>(OwningBlasterCharacter->Controller)
+		                                : OwningBlasterPlayerController;
 }
 
 void AWeapon::OnRep_State()

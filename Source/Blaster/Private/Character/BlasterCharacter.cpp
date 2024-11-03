@@ -202,6 +202,11 @@ void ABlasterCharacter::MulticastEliminate_Implementation()
 	StartDissolve();
 
 	DisableMovement();
+
+	if (IsValid(BlasterPlayerController))
+	{
+		BlasterPlayerController->SetHUDWeaponAmmo(0);
+	}
 }
 
 

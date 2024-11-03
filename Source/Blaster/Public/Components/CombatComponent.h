@@ -75,6 +75,8 @@ private:
 	void StartFireTimer();
 	void FireTimerFinished();
 
+	bool CanFire() const;
+
 private:
 	UFUNCTION()
 	void OnRep_EquippedWeapon();

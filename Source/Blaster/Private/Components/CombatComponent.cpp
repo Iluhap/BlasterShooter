@@ -103,6 +103,11 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 {
 	if (not IsValid(Character) or not IsValid(WeaponToEquip)) return;
 
+	if (IsValid(EquippedWeapon))
+	{
+		EquippedWeapon->Dropped();
+	}
+
 	EquippedWeapon = WeaponToEquip;
 
 	ServerEquipWeapon(WeaponToEquip);
@@ -126,6 +131,7 @@ void UCombatComponent::NetMulticastEquipWeapon_Implementation(AWeapon* WeaponToE
 	}
 
 	EquippedWeapon->SetOwner(Character);
+	EquippedWeapon->UpdateHUDAmmo();
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
 }
@@ -339,7 +345,7 @@ void UCombatComponent::InterpFOV(float DeltaTime)
 
 void UCombatComponent::Fire()
 {
-	if (IsWeaponEquipped() and bCanFire)
+	if (IsWeaponEquipped() and CanFire())
 	{
 		bCanFire = false;
 
@@ -373,6 +379,13 @@ void UCombatComponent::FireTimerFinished()
 	{
 		Fire();
 	}
+}
+
+bool UCombatComponent::CanFire() const
+{
+	return IsValid(EquippedWeapon)
+		and not EquippedWeapon->IsEmpty()
+		and bCanFire;
 }
 
 void UCombatComponent::OnRep_EquippedWeapon()
