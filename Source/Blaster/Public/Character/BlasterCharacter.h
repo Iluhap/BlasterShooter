@@ -25,6 +25,7 @@ public:
 	virtual void Jump() override;
 
 	void PlayFireMontage(bool IsAiming) const;
+	void PlayReloadMontage() const;
 	void PlayEliminationMontage() const;
 
 	void Eliminate();
@@ -58,6 +59,9 @@ private:
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
 
+	UFUNCTION()
+	void OnRep_Health();
+
 private:
 	void Move(const struct FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
@@ -68,6 +72,8 @@ private:
 
 	void StartFire();
 	void StopFire();
+
+	void Reload();
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquip();
@@ -84,9 +90,6 @@ private:
 	void CalculateAimOffsetPitch();
 
 	float GetSpeed() const;
-
-	UFUNCTION()
-	void OnRep_Health();
 
 	UFUNCTION()
 	void ReceiveDamage(AActor* DamagedActor,
@@ -108,7 +111,7 @@ private:
 	void DisableMovement();
 
 	void PollInit();
-	
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	TObjectPtr<class USpringArmComponent> CameraArm;
@@ -116,7 +119,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	TObjectPtr<class UCameraComponent> FollowCamera;
 
-	UPROPERTY(VisibleAnywhere, Replicated)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<class UCombatComponent> Combat;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
@@ -132,10 +135,13 @@ private:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	TObjectPtr<UAnimMontage> EliminationMontage;
 
+	UPROPERTY(EditAnywhere, Category = Combat)
+	TObjectPtr<UAnimMontage> ReloadMontage;
+
 private:
 	UPROPERTY()
 	class ABlasterPlayerController* BlasterPlayerController;
-	
+
 	UPROPERTY()
 	class ABlasterPlayerState* BlasterPlayerState;
 
@@ -216,4 +222,7 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> FireAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> ReloadAction;
 };

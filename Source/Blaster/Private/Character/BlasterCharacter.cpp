@@ -16,6 +16,7 @@
 #include "Net/UnrealNetwork.h"
 #include "PlayerState/BlasterPlayerState.h"
 #include "Weapon/Weapon.h"
+#include "Weapon/WeaponTypes.h"
 
 
 ABlasterCharacter::ABlasterCharacter()
@@ -39,6 +40,7 @@ ABlasterCharacter::ABlasterCharacter()
 	OverheadWidget->SetupAttachment(RootComponent);
 
 	Combat = CreateDefaultSubobject<UCombatComponent>("Combat Component");
+	Combat->SetIsReplicated(true);
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 
@@ -84,13 +86,14 @@ void ABlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 	Input->BindAction(FireAction, ETriggerEvent::Started, this, &ABlasterCharacter::StartFire);
 	Input->BindAction(FireAction, ETriggerEvent::Completed, this, &ABlasterCharacter::StopFire);
+
+	Input->BindAction(ReloadAction, ETriggerEvent::Completed, this, &ABlasterCharacter::Reload);
 }
 
 void ABlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME_CONDITION(ABlasterCharacter, OverlappingWeapon, COND_OwnerOnly);
-	DOREPLIFETIME(ABlasterCharacter, Combat);
 	DOREPLIFETIME(ABlasterCharacter, Health);
 }
 
@@ -122,7 +125,7 @@ void ABlasterCharacter::PollInit()
 void ABlasterCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+
 	PollInit();
 
 	if (GetLocalRole() > ROLE_SimulatedProxy and IsLocallyControlled())
@@ -165,6 +168,36 @@ void ABlasterCharacter::PlayFireMontage(bool IsAiming) const
 	}
 }
 
+void ABlasterCharacter::PlayReloadMontage() const
+{
+	if (not IsValid(Combat) or not Combat->IsWeaponEquipped())
+		return;
+
+	if (auto* AnimInstance = GetMesh()->GetAnimInstance();
+		IsValid(AnimInstance) and IsValid(ReloadMontage))
+	{
+		AnimInstance->Montage_Play(ReloadMontage);
+
+		FName SectionName;
+
+		switch (Combat->GetEquippedWeapon()->GetWeaponType())
+		{
+		case EWeaponType::EWT_AssaultRifle:
+			{
+				SectionName = FName("Rifle");
+				break;
+			}
+		default:
+			{
+				break;
+			}
+		}
+
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
+
 void ABlasterCharacter::PlayEliminationMontage() const
 {
 	const TArray<FName> SectionNames = { "Elim1", "Elim2", "Elim3" };
@@ -181,12 +214,11 @@ void ABlasterCharacter::PlayEliminationMontage() const
 
 void ABlasterCharacter::Eliminate()
 {
-
 	if (IsValid(Combat) and Combat->IsWeaponEquipped())
 	{
 		Combat->GetEquippedWeapon()->Dropped();
 	}
-	
+
 	MulticastEliminate();
 
 	GetWorld()->GetTimerManager().SetTimer(EliminationTimerHandle,
@@ -471,6 +503,14 @@ void ABlasterCharacter::StopFire()
 	}
 }
 
+void ABlasterCharacter::Reload()
+{
+	if (IsValid(Combat))
+	{
+		Combat->Reload();
+	}
+}
+
 bool ABlasterCharacter::IsWeaponEquipped() const
 {
 	return Combat and Combat->IsWeaponEquipped();
@@ -535,8 +575,6 @@ void ABlasterCharacter::SimProxiesTurn()
 	ProxyRotation = GetActorRotation();
 
 	ProxyYaw = UKismetMathLibrary::NormalizedDeltaRotator(ProxyRotation, ProxyRotationLastFrame).Yaw;
-
-	UE_LOG(LogTemp, Warning, TEXT("ProxyYaw: %f"), ProxyYaw);
 
 	if (FMath::Abs(ProxyYaw) > TurnThreshold)
 	{

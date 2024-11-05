@@ -5,8 +5,11 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "HUD/BlasterHUD.h"
+#include "BlasterTypes/CombatState.h"
 #include "CombatComponent.generated.h"
 
+
+enum class EWeaponType : uint8;
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class BLASTER_API UCombatComponent : public UActorComponent
@@ -25,6 +28,11 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 	void EquipWeapon(class AWeapon* WeaponToEquip);
+	void Reload();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishReloading();
+
 	void SetAiming(bool bIsAiming);
 	void SetFiring(bool bIsFiring);
 
@@ -37,14 +45,9 @@ public: // Getters
 
 	FORCEINLINE FVector GetHitTarget() const { return HitTargetLocation; }
 	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
+	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
 
 private:
-	UFUNCTION(Server, Reliable)
-	void ServerEquipWeapon(AWeapon* WeaponToEquip);
-
-	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastEquipWeapon(AWeapon* WeaponToEquip);
-
 	UFUNCTION(Server, Reliable)
 	void ServerSetAiming(bool bIsAiming);
 
@@ -57,6 +60,9 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastFire(const FVector_NetQuantize& HitTarget);
 
+	UFUNCTION(Server, Reliable)
+	void ServerReload();
+
 private:
 	void SetMaxWalkSpeed(float Speed);
 
@@ -68,7 +74,7 @@ private:
 	void UpdateCrosshairAimFactor(float DeltaTime);
 	void UpdateCrosshairShootingFactor(float DeltaTime);
 	void UpdateCrosshairColor(const FHitResult& TraceResult);
-	
+
 	void InterpFOV(float DeltaTime);
 
 	void Fire();
@@ -77,10 +83,25 @@ private:
 
 	bool CanFire() const;
 
+	void InitializeCarriedAmmo();
+	void SetActiveCarriedAmmo();
+
+	void HandleReload();
+
+	int32 AmountToReload() const;
+
+	void UpdateAmmoValues();
+
 private:
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
-	
+
+	UFUNCTION()
+	void OnRep_ActiveCarriedAmmo();
+
+	UFUNCTION()
+	void OnRep_CombatState();
+
 private:
 	UPROPERTY()
 	class ABlasterCharacter* Character;
@@ -89,7 +110,7 @@ private:
 	class ABlasterPlayerController* Controller;
 
 	UPROPERTY()
-	class ABlasterHUD* HUD;
+	ABlasterHUD* HUD;
 
 	UPROPERTY(ReplicatedUsing=OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
@@ -162,4 +183,13 @@ private:
 	FTimerHandle FireTimerHandle;
 
 	bool bCanFire;
+
+	UPROPERTY(Replicated, ReplicatedUsing=OnRep_ActiveCarriedAmmo)
+	int32 ActiveCarriedAmmo;
+
+	UPROPERTY()
+	TMap<EWeaponType, int32> CarriedAmmoMap;
+
+	UPROPERTY(ReplicatedUsing=OnRep_CombatState)
+	ECombatState CombatState;
 };

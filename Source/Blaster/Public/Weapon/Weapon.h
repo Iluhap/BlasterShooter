@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "WeaponTypes.h"
 #include "GameFramework/Actor.h"
 #include "Weapon.generated.h"
 
@@ -46,11 +47,10 @@ public:
 
 	void ShowPickupWidget(bool bShowWidget);
 	void SetState(const EWeaponState NewState);
-
 	virtual void Fire(const FVector& HitTarget);
-
 	void Dropped();
-
+	void AddAmmo(int32 AmmoAmount);
+	
 	void UpdateHUDAmmo();
 
 public:
@@ -61,6 +61,9 @@ public:
 	FORCEINLINE float GetZoomInterpSpeed() const { return ZoomInterpSpeed; };
 	FORCEINLINE float GetFireRate() const { return FireRate; };
 	FORCEINLINE float IsAutomatic() const { return bAutomatic; };
+	FORCEINLINE EWeaponType GetWeaponType() const { return Type; };
+	FORCEINLINE int32 GetAmmo() const { return Ammo; };
+	FORCEINLINE int32 GetMagazineCapacity() const { return MagazineCapacity; };
 
 protected:
 	virtual void OnRep_Owner() override;
@@ -122,6 +125,9 @@ private:
 	class ABlasterCharacter* OwningBlasterCharacter;
 
 private:
+	UPROPERTY(EditAnywhere)
+	EWeaponType Type;
+	
 	UPROPERTY(EditAnywhere)
 	float ZoomedFOV = 30.f;
 

@@ -46,16 +46,20 @@ void ABlasterPlayerController::SetHUD()
 	}
 }
 
+bool ABlasterPlayerController::IsHUDValid() const
+{
+	return IsValid(BlasterHUD) and IsValid(BlasterHUD->CharacterOverlay);
+}
+
 void ABlasterPlayerController::SetHUDHealth(float Health, float MaxHealth)
 {
 	SetHUD();
 
-	const bool bHUDValid = BlasterHUD
-		and BlasterHUD->CharacterOverlay
-		and BlasterHUD->CharacterOverlay->HealthBar
-		and BlasterHUD->CharacterOverlay->HealthText;
+	if (not IsHUDValid())
+		return;
 
-	if (bHUDValid)
+	if (IsValid(BlasterHUD->CharacterOverlay->HealthBar)
+		and IsValid(BlasterHUD->CharacterOverlay->HealthText))
 	{
 		const float HealthPercent = Health / MaxHealth;
 		BlasterHUD->CharacterOverlay->HealthBar->SetPercent(HealthPercent);
@@ -71,9 +75,10 @@ void ABlasterPlayerController::SetHUDScore(float ScoreAmount)
 {
 	SetHUD();
 
-	if (IsValid(BlasterHUD)
-		and IsValid(BlasterHUD->CharacterOverlay)
-		and IsValid(BlasterHUD->CharacterOverlay->ScoreAmount))
+	if (not IsHUDValid())
+		return;
+
+	if (IsValid(BlasterHUD->CharacterOverlay->ScoreAmount))
 	{
 		const auto ScoreText = FString::Printf(TEXT("%d"), FMath::FloorToInt(ScoreAmount));
 		BlasterHUD->CharacterOverlay->ScoreAmount->SetText(FText::FromString(ScoreText));
@@ -84,9 +89,10 @@ void ABlasterPlayerController::SetHUDDefeats(int32 Defeats)
 {
 	SetHUD();
 
-	if (IsValid(BlasterHUD)
-		and IsValid(BlasterHUD->CharacterOverlay)
-		and IsValid(BlasterHUD->CharacterOverlay->DefeatsAmount))
+	if (not IsHUDValid())
+		return;
+
+	if (IsValid(BlasterHUD->CharacterOverlay->DefeatsAmount))
 	{
 		const auto DefeatsText = FString::Printf(TEXT("%d"), Defeats);
 		BlasterHUD->CharacterOverlay->DefeatsAmount->SetText(FText::FromString(DefeatsText));
@@ -97,11 +103,26 @@ void ABlasterPlayerController::SetHUDWeaponAmmo(int32 Ammo)
 {
 	SetHUD();
 
-	if (IsValid(BlasterHUD)
-		and IsValid(BlasterHUD->CharacterOverlay)
-		and IsValid(BlasterHUD->CharacterOverlay->WeaponAmmoAmount))
+	if (not IsHUDValid())
+		return;
+
+	if (IsValid(BlasterHUD->CharacterOverlay->WeaponAmmoAmount))
 	{
 		const auto AmmoText = FString::Printf(TEXT("%d"), Ammo);
 		BlasterHUD->CharacterOverlay->WeaponAmmoAmount->SetText(FText::FromString(AmmoText));
+	}
+}
+
+void ABlasterPlayerController::SetHUDCarriedAmmo(int32 Ammo)
+{
+	SetHUD();
+
+	if (not IsHUDValid())
+		return;
+
+	if (IsValid(BlasterHUD->CharacterOverlay->ActiveCarriedAmmoAmount))
+	{
+		const auto AmmoText = FString::Printf(TEXT("%d"), Ammo);
+		BlasterHUD->CharacterOverlay->ActiveCarriedAmmoAmount->SetText(FText::FromString(AmmoText));
 	}
 }

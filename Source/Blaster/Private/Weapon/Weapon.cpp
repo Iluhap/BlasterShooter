@@ -166,6 +166,12 @@ void AWeapon::Dropped()
 	OwningBlasterPlayerController = nullptr;
 }
 
+void AWeapon::AddAmmo(int32 AmmoToAdd)
+{
+	Ammo = FMath::Clamp(Ammo - AmmoToAdd, 0, MagazineCapacity);
+	UpdateHUDAmmo();
+}
+
 void AWeapon::OnRep_Owner()
 {
 	Super::OnRep_Owner();

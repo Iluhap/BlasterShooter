@@ -119,6 +119,7 @@ void UBlasterAnimInstance::UpdateCombatComponentVariables()
 		bWeaponEquipped = CombatComponent->IsWeaponEquipped();
 		EquippedWeapon = CombatComponent->GetEquippedWeapon();
 		bIsAiming = CombatComponent->IsAiming();
+		bUseFABRIK = CombatComponent->GetCombatState() != ECombatState::ECS_Reloading;
 	}
 }
 
