@@ -82,6 +82,10 @@ private:
 private:
 	void SetOwningController();
 
+public:
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<USoundCue> EquipSound;
+
 protected:
 	UPROPERTY(VisibleAnywhere, Category= "Weapon Properties")
 	TObjectPtr<USkeletalMeshComponent> Mesh;

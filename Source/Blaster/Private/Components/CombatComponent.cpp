@@ -16,6 +16,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Interfaces/InteractWithCrosshairInterface.h"
 #include "Weapon/WeaponTypes.h"
+#include "Sound/SoundCue.h"
 
 
 UCombatComponent::UCombatComponent()
@@ -134,6 +135,8 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 	SetActiveCarriedAmmo();
 
+	PlayEquipSound();
+
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
 }
@@ -216,6 +219,17 @@ void UCombatComponent::UpdateAmmoValues()
 	}
 
 	EquippedWeapon->AddAmmo(-ReloadAmount);
+}
+
+void UCombatComponent::PlayEquipSound() const
+{
+	if (IsValid(EquippedWeapon->EquipSound))
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			EquippedWeapon->EquipSound,
+			Character->GetActorLocation());
+	}
 }
 
 void UCombatComponent::SetAiming(bool bIsAiming)
@@ -537,6 +551,8 @@ void UCombatComponent::OnRep_EquippedWeapon()
 			Socket->AttachActor(EquippedWeapon, Character->GetMesh());
 		}
 
+		PlayEquipSound();
+		
 		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 		Character->bUseControllerRotationYaw = false;
 	}

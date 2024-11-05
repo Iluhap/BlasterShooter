@@ -92,6 +92,8 @@ private:
 
 	void UpdateAmmoValues();
 
+	void PlayEquipSound() const;
+
 private:
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
