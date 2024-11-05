@@ -137,6 +137,11 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 	PlayEquipSound();
 
+	if (EquippedWeapon->IsEmpty())
+	{
+		Reload();
+	}
+	
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
 }
@@ -285,6 +290,10 @@ void UCombatComponent::FireTimerFinished()
 	if (IsFiring() and EquippedWeapon->IsAutomatic())
 	{
 		Fire();
+	}
+	if (EquippedWeapon->IsEmpty())
+	{
+		Reload();
 	}
 }
 
@@ -552,7 +561,7 @@ void UCombatComponent::OnRep_EquippedWeapon()
 		}
 
 		PlayEquipSound();
-		
+
 		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 		Character->bUseControllerRotationYaw = false;
 	}
