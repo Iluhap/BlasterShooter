@@ -32,5 +32,8 @@ public:
 
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTextBlock> ActiveCarriedAmmoAmount;
+
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UTextBlock> MatchCountdownText;
 	
 };

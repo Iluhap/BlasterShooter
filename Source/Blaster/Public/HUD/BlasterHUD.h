@@ -45,16 +45,17 @@ public:
 
 	void SetHUDPackage(const FHUDPackage& NewHUDPackage) { HUDPackage = NewHUDPackage; };
 
+	void AddCharacterOverlay();
+	void AddAnnouncement();
+
 protected:
 	virtual void BeginPlay() override;
 
 private:
 	void DrawCrosshair(UTexture2D* Texture,
-		const FVector2D& ViewPortCenter, const FVector2D& Spread,
-		const FLinearColor& CrosshairColor);
+	                   const FVector2D& ViewPortCenter, const FVector2D& Spread,
+	                   const FLinearColor& CrosshairColor);
 
-	void AddCharacterOverlay();
-	
 private:
 	FHUDPackage HUDPackage;
 
@@ -62,8 +63,12 @@ private:
 	float CrosshairSpreadMax = 16.f;
 
 	UPROPERTY(EditAnywhere, Category="Player Stats")
-	TSubclassOf<class UUserWidget> CharacterOverlayClass;
+	TSubclassOf<UUserWidget> CharacterOverlayClass;
+
+	UPROPERTY(EditAnywhere, Category="Announcements")
+	TSubclassOf<UUserWidget> AnnouncementClass;
 
 public:
 	TObjectPtr<class UCharacterOverlay> CharacterOverlay;
+	TObjectPtr<class UAnnouncement> Announcement;
 };

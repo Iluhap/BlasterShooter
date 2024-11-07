@@ -4,14 +4,13 @@
 #include "HUD/BlasterHUD.h"
 
 #include "Blueprint/UserWidget.h"
+#include "HUD/Announcement.h"
 #include "HUD/CharacterOverlay.h"
 
 
 void ABlasterHUD::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	AddCharacterOverlay();
 }
 
 void ABlasterHUD::DrawHUD()
@@ -71,7 +70,16 @@ void ABlasterHUD::AddCharacterOverlay()
 		IsValid(PlayerController) and IsValid(CharacterOverlayClass))
 	{
 		CharacterOverlay = CreateWidget<UCharacterOverlay>(PlayerController, CharacterOverlayClass);
-
 		CharacterOverlay->AddToViewport();
+	}
+}
+
+void ABlasterHUD::AddAnnouncement()
+{
+	if (auto* PlayerController = GetOwningPlayerController();
+		IsValid(PlayerController) and IsValid(AnnouncementClass))
+	{
+		Announcement = CreateWidget<UAnnouncement>(PlayerController, AnnouncementClass);
+		Announcement->AddToViewport();
 	}
 }
