@@ -13,6 +13,7 @@ ABlasterGameMode::ABlasterGameMode()
 {
 	bDelayedStart = true;
 	WarmupTime = 5.f;
+	MatchTime = 120.f;
 	LevelStartingTime = 0.f; 
 }
 

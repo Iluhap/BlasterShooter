@@ -15,6 +15,8 @@ class BLASTER_API ABlasterPlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+	ABlasterPlayerController();
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual void Tick(float DeltaSeconds) override;
@@ -25,6 +27,7 @@ public:
 	void SetHUDWeaponAmmo(int32 Ammo);
 	void SetHUDCarriedAmmo(int32 Ammo);
 	void SetHUDMatchCountdown(float CountdownTime);
+	void SetHUDAnnouncementCountdown(float CountdownTime);
 
 	virtual float GetServerTime();
 	virtual void ReceivedPlayer() override; // Sync server time with Client
@@ -38,6 +41,13 @@ public:
 	UFUNCTION(Client, Reliable)
 	void ClientReportServerTime(float TimeOfClientRequest, float TimeServerReceivedClientRequest);
 
+	UFUNCTION(Server, Reliable)
+	void ServerCheckMatchState();
+
+	UFUNCTION(Client, Reliable)
+	void ClientJoinMidgame(FName StateOfMatch,
+	                       float Warmup, float Match, float StartingTime);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* PawnToPossess) override;
@@ -45,13 +55,15 @@ protected:
 	void SetHUDTime();
 	void PollInit();
 
-	void HandleMatchInProgressState();
+	void HandleMatchStarting();
 
 private:
 	void SetHUD();
 	bool IsHUDValid() const;
 	void CheckTimeSync(float DeltaSeconds);
 
+	FText FormatCountdown(float CountdownTime) const;
+	
 private:
 	UFUNCTION()
 	void OnRep_MatchState();
@@ -63,22 +75,23 @@ private:
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<class ABlasterHUD> BlasterHUD;
 
-	float MatchTime = 120.f;
+	float MatchTime;
+	float WarmupTime;
+	float LevelStartingTime;
+
 	int32 CountdownInt;
 
 	UPROPERTY(ReplicatedUsing=OnRep_MatchState)
 	FName CurrentMatchState;
 
-	float ClientServerDelta = 0.f;
+	float ClientServerDelta;
 
 	UPROPERTY(EditAnywhere, Category = Time)
-	float TimeSyncFrequency = 5.f;
+	float TimeSyncFrequency;
 
-	float TimeSyncRunningTime = 0.f;
+	float TimeSyncRunningTime;
 
 private:
-	bool bInitSavedHUDValues;
-
 	float SavedHealth;
 	float SavedMaxHealth;
 	float SavedScoreAmount;

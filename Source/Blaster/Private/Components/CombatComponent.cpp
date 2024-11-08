@@ -57,6 +57,8 @@ UCombatComponent::UCombatComponent()
 	bCanFire = true;
 
 	ActiveCarriedAmmo = 0;
+
+	CombatState = ECombatState::ECS_Unoccupied;
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -510,6 +512,8 @@ void UCombatComponent::SetActiveCarriedAmmo()
 	{
 		ActiveCarriedAmmo = *AmmoAmount;
 
+		Controller = Cast<ABlasterPlayerController>(Character->GetController());
+		
 		if (IsValid(Controller))
 		{
 			Controller->SetHUDCarriedAmmo(ActiveCarriedAmmo);

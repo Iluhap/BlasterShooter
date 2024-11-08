@@ -17,7 +17,7 @@ class BLASTER_API ABlasterGameMode : public AGameMode
 
 public:
 	ABlasterGameMode();
-	
+
 	virtual void Tick(float DeltaTime) override;
 
 protected:
@@ -32,9 +32,17 @@ public:
 
 	void RequestRespawn(ACharacter* EliminatedCharacter, AController* EliminatedController);
 
+public:
+	FORCEINLINE float GetWarmupTime() const { return WarmupTime; }
+	FORCEINLINE float GetMatchTime() const { return MatchTime; }
+	FORCEINLINE float GetLevelStartingTime() const { return LevelStartingTime; }
+
 private:
 	UPROPERTY(EditDefaultsOnly)
 	float WarmupTime;
+
+	UPROPERTY(EditDefaultsOnly)
+	float MatchTime;
 
 	float CountdownTime = 0.f;
 
