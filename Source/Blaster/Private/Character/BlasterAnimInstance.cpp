@@ -120,8 +120,10 @@ void UBlasterAnimInstance::UpdateCombatComponentVariables()
 		EquippedWeapon = CombatComponent->GetEquippedWeapon();
 		bIsAiming = CombatComponent->IsAiming();
 		bUseFABRIK = CombatComponent->GetCombatState() != ECombatState::ECS_Reloading;
-		bUseAimOffsets = CombatComponent->GetCombatState() != ECombatState::ECS_Reloading;
-		bTransformRightHand = CombatComponent->GetCombatState() != ECombatState::ECS_Reloading;
+		bUseAimOffsets = not BlasterCharacter->IsGameplayDisabled()
+			and CombatComponent->GetCombatState() != ECombatState::ECS_Reloading;
+		bTransformRightHand = not BlasterCharacter->IsGameplayDisabled()
+			and CombatComponent->GetCombatState() != ECombatState::ECS_Reloading;
 	}
 }
 

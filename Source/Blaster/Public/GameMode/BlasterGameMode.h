@@ -7,6 +7,12 @@
 #include "BlasterGameMode.generated.h"
 
 
+namespace MatchState
+{
+	extern BLASTER_API const FName Cooldown;
+}
+
+
 class ABlasterCharacter;
 class ABlasterPlayerController;
 
@@ -29,13 +35,13 @@ public:
 	                              ABlasterPlayerController* VictimController,
 	                              ABlasterPlayerController* AttackerController);
 
-
 	void RequestRespawn(ACharacter* EliminatedCharacter, AController* EliminatedController);
 
 public:
 	FORCEINLINE float GetWarmupTime() const { return WarmupTime; }
 	FORCEINLINE float GetMatchTime() const { return MatchTime; }
 	FORCEINLINE float GetLevelStartingTime() const { return LevelStartingTime; }
+	FORCEINLINE float GetCooldownTime() const { return CooldownTime; }
 
 private:
 	UPROPERTY(EditDefaultsOnly)
@@ -44,7 +50,14 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	float MatchTime;
 
-	float CountdownTime = 0.f;
+	UPROPERTY(EditDefaultsOnly)
+	float CooldownTime;
+	
+	float CountdownTime;
+
+	float WarmupTimeLeft;
+	float MatchTimeLeft;
+	float CooldownTimeLeft;
 
 	float LevelStartingTime;
 };

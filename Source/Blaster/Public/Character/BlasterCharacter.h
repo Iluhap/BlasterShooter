@@ -33,6 +33,9 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastEliminate();
 
+	UFUNCTION()
+	void DisableGameplay();
+
 public:
 	void SetOverlappingWeapon(class AWeapon* Weapon);
 
@@ -51,6 +54,7 @@ public:
 	FORCEINLINE bool IsEliminated() const { return bIsEliminated; }
 	FORCEINLINE float GetHealth() const { return Health; }
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
+	FORCEINLINE bool IsGameplayDisabled() const { return bDisableGameplay; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -111,6 +115,8 @@ private:
 	void DisableMovement();
 
 	void PollInit();
+
+	void RotateInPlace(float DeltaTime);
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -200,6 +206,8 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float BaseDissolveGlow;
+
+	bool bDisableGameplay;
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))

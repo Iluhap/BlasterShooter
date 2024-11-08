@@ -46,7 +46,8 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void ClientJoinMidgame(FName StateOfMatch,
-	                       float Warmup, float Match, float StartingTime);
+	                       float Warmup, float Match,
+	                       float Cooldown, float StartingTime);
 
 protected:
 	virtual void BeginPlay() override;
@@ -56,14 +57,15 @@ protected:
 	void PollInit();
 
 	void HandleMatchStarting();
+	void HandleCooldown();
 
 private:
 	void SetHUD();
 	bool IsHUDValid() const;
 	void CheckTimeSync(float DeltaSeconds);
 
-	FText FormatCountdown(float CountdownTime) const;
-	
+	FText MakeTimeTextFromSeconds(float TimeSeconds) const;
+
 private:
 	UFUNCTION()
 	void OnRep_MatchState();
@@ -77,6 +79,7 @@ private:
 
 	float MatchTime;
 	float WarmupTime;
+	float CooldownTime;
 	float LevelStartingTime;
 
 	int32 CountdownInt;
