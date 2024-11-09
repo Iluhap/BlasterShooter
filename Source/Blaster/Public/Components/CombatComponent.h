@@ -171,12 +171,12 @@ private:
 	float DefaultFOV;
 
 	UPROPERTY(EditAnywhere, Category=Zoom)
-	float ZoomFOV = 30.f;
+	float ZoomFOV;
 
 	float CurrentFOV;
 
 	UPROPERTY(EditAnywhere, Category=Zoom)
-	float ZoomInterpSpeed = 20.f;
+	float ZoomInterpSpeed;
 
 	/*
 	 * Automatic Fire
@@ -191,6 +191,12 @@ private:
 
 	UPROPERTY()
 	TMap<EWeaponType, int32> CarriedAmmoMap;
+
+	UPROPERTY(EditAnywhere)
+	int32 AssaultRifleStartAmmo;
+
+	UPROPERTY(EditAnywhere)
+	int32 RocketLauncherStartAmmo;
 
 	UPROPERTY(ReplicatedUsing=OnRep_CombatState)
 	ECombatState CombatState;

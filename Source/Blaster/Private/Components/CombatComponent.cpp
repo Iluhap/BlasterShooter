@@ -59,6 +59,12 @@ UCombatComponent::UCombatComponent()
 	ActiveCarriedAmmo = 0;
 
 	CombatState = ECombatState::ECS_Unoccupied;
+
+	ZoomFOV = 30.f;
+	ZoomInterpSpeed = 20.f;
+
+	AssaultRifleStartAmmo = 90;
+	RocketLauncherStartAmmo = 10;
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -502,7 +508,8 @@ void UCombatComponent::InterpFOV(float DeltaTime)
 
 void UCombatComponent::InitializeCarriedAmmo()
 {
-	CarriedAmmoMap.Emplace(EWeaponType::EWT_AssaultRifle, 300.f);
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_AssaultRifle, AssaultRifleStartAmmo);
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_RocketLauncher, RocketLauncherStartAmmo);
 }
 
 void UCombatComponent::SetActiveCarriedAmmo()

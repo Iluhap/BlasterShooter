@@ -156,7 +156,8 @@ void ABlasterPlayerController::HandleMatchStarting()
 	SetHUD();
 	if (IsValid(BlasterHUD))
 	{
-		BlasterHUD->AddCharacterOverlay();
+		if (not IsValid(BlasterHUD->CharacterOverlay))
+			BlasterHUD->AddCharacterOverlay();
 
 		if (IsValid(BlasterHUD->Announcement))
 		{
