@@ -25,6 +25,8 @@ protected:
 	                   AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                   FVector NormalImpulse, const FHitResult& Hit);
 
+	virtual void PlayImpactEffects() const;
+
 public:
 	virtual void Tick(float DeltaTime) override;
 
@@ -32,10 +34,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category=Damage)
 	float Damage;
 
-private:
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<class UBoxComponent> CollisionBox;
 
+private:
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<class UProjectileMovementComponent> MovementComponent;
 

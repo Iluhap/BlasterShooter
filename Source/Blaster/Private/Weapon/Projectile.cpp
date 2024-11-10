@@ -3,7 +3,6 @@
 
 #include "Weapon/Projectile.h"
 
-#include "Character/BlasterCharacter.h"
 #include "Components/BoxComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -30,22 +29,14 @@ AProjectile::AProjectile()
 	MovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>("Movement Component");
 	MovementComponent->bRotationFollowsVelocity = true;
 
-	Damage = 20.f; 
+	Damage = 20.f;
 }
 
 void AProjectile::Destroyed()
 {
 	Super::Destroyed();
 
-	if (IsValid(ImpactParticles))
-	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, GetActorTransform());
-	}
-
-	if (IsValid(ImpactSound))
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
-	}
+	PlayImpactEffects();
 }
 
 void AProjectile::BeginPlay()
@@ -71,6 +62,19 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComponent,
                         FVector NormalImpulse, const FHitResult& Hit)
 {
 	Destroy();
+}
+
+void AProjectile::PlayImpactEffects() const
+{
+	if (IsValid(ImpactParticles))
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, GetActorTransform());
+	}
+
+	if (IsValid(ImpactSound))
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
+	}
 }
 
 void AProjectile::Tick(float DeltaTime)
