@@ -23,4 +23,8 @@ protected:
 
 public:
 	virtual void Tick(float DeltaTime) override;
+
+private:
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<class UProjectileMovementComponent> MovementComponent;
 };

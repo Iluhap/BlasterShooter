@@ -39,9 +39,6 @@ protected:
 
 private:
 	UPROPERTY(EditAnywhere)
-	TObjectPtr<class UProjectileMovementComponent> MovementComponent;
-
-	UPROPERTY(EditAnywhere)
 	TObjectPtr<UParticleSystem> Tracer;
 
 	TObjectPtr<UParticleSystemComponent> TracerComponent;

@@ -26,9 +26,6 @@ AProjectile::AProjectile()
 	CollisionBox->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 	CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECR_Block);
 
-	MovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>("Movement Component");
-	MovementComponent->bRotationFollowsVelocity = true;
-
 	Damage = 20.f;
 }
 

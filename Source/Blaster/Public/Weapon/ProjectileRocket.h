@@ -29,6 +29,9 @@ private:
 	void DestroyTimerFinished();
 
 private:
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<class URocketMovementComponent> RocketMovementComponent;
+
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> RocketMesh;
 
