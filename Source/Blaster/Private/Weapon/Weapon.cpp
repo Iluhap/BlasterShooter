@@ -116,6 +116,7 @@ void AWeapon::SetState(const EWeaponState NewState)
 			ShowPickupWidget(false);
 			AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			SetMeshCollision(false);
+
 			break;
 		}
 	case EWeaponState::EWS_Dropped:
@@ -197,6 +198,22 @@ void AWeapon::SetMeshCollision(bool bEnable)
 
 	Mesh->SetSimulatePhysics(bEnable);
 	Mesh->SetEnableGravity(bEnable);
+
+	if (bEnable)
+	{
+		Mesh->SetCollisionResponseToAllChannels(ECR_Block);
+		Mesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+		Mesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	}
+	else
+	{
+		if (GetWeaponType() == EWeaponType::EWT_SubmachineGun)
+		{
+			Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			Mesh->SetEnableGravity(true);
+			Mesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+		}
+	}
 }
 
 void AWeapon::SpendRound()

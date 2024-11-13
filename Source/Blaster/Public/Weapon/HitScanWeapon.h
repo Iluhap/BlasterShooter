@@ -17,9 +17,11 @@ public:
 private:
 	void SpawnImpactParticles(const FHitResult& HitResult) const;
 	void SpawnBeamParticles(const FTransform& StartTransform, const FVector& BeamEnd) const;
+	void SpawnMuzzleFlashEffects(const FTransform& MuzzleTransform) const;
+	void SpawnHitSound(const FVector& HitLocation) const;
 
 	void ApplyDamage(AActor* DamagedActor) const;
-	
+
 private:
 	UPROPERTY(EditAnywhere)
 	float Damage;
@@ -28,5 +30,14 @@ private:
 	TObjectPtr<UParticleSystem> ImpactParticles;
 
 	UPROPERTY(EditAnywhere)
-	TObjectPtr<UParticleSystem>	BeamParticles;
+	TObjectPtr<UParticleSystem> BeamParticles;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UParticleSystem> MuzzleFlash;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<USoundCue> FireSound;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<USoundCue> HitSound;
 };

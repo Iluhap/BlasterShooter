@@ -201,6 +201,9 @@ private:
 	UPROPERTY(EditAnywhere)
 	int32 PistolStartAmmo;
 
+	UPROPERTY(EditAnywhere)
+	int32 SubmachineGunStartAmmo;
+
 	UPROPERTY(ReplicatedUsing=OnRep_CombatState)
 	ECombatState CombatState;
 };
