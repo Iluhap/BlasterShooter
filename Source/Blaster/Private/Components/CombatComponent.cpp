@@ -67,6 +67,7 @@ UCombatComponent::UCombatComponent()
 	RocketLauncherStartAmmo = 10;
 	PistolStartAmmo = 30;
 	SubmachineGunStartAmmo = 60;
+	ShotgunStartAmmo = 20;
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -514,6 +515,7 @@ void UCombatComponent::InitializeCarriedAmmo()
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_RocketLauncher, RocketLauncherStartAmmo);
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_Pistol, PistolStartAmmo);
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_SubmachineGun, SubmachineGunStartAmmo);
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_Shotgun, ShotgunStartAmmo);
 }
 
 void UCombatComponent::SetActiveCarriedAmmo()
