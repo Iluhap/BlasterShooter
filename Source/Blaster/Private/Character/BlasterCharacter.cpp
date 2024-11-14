@@ -15,7 +15,6 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "PlayerState/BlasterPlayerState.h"
-#include "Serialization/ArchiveReplaceObjectRef.h"
 #include "Weapon/Weapon.h"
 #include "Weapon/WeaponTypes.h"
 
@@ -220,12 +219,17 @@ void ABlasterCharacter::PlayReloadMontage() const
 				SectionName = FName("Rifle");
 				break;
 			}
-			case EWeaponType::EWT_SubmachineGun:
+		case EWeaponType::EWT_SubmachineGun:
 			{
 				SectionName = FName("Rifle");
 				break;
 			}
 		case EWeaponType::EWT_Shotgun:
+			{
+				SectionName = FName("Rifle");
+				break;
+			}
+		case EWeaponType::EWT_SniperRifle:
 			{
 				SectionName = FName("Rifle");
 				break;
@@ -281,6 +285,17 @@ void ABlasterCharacter::MulticastEliminate_Implementation()
 	if (IsValid(BlasterPlayerController))
 	{
 		BlasterPlayerController->SetHUDWeaponAmmo(0);
+	}
+
+	const bool bHideSniperScope = IsLocallyControlled()
+		and IsValid(Combat)
+		and Combat->IsAiming()
+		and Combat->IsWeaponEquipped()
+		and Combat->GetEquippedWeapon()->GetWeaponType() == EWeaponType::EWT_SniperRifle;
+
+	if (bHideSniperScope)
+	{
+		ShowSniperScopeWidget(false);
 	}
 }
 

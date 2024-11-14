@@ -68,6 +68,7 @@ UCombatComponent::UCombatComponent()
 	PistolStartAmmo = 30;
 	SubmachineGunStartAmmo = 60;
 	ShotgunStartAmmo = 20;
+	SniperRifleStartAmmo = 10;
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -152,7 +153,7 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	{
 		Reload();
 	}
-	
+
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
 }
@@ -251,6 +252,14 @@ void UCombatComponent::PlayEquipSound() const
 void UCombatComponent::SetAiming(bool bIsAiming)
 {
 	ServerSetAiming(bIsAiming);
+
+	if (IsValid(Character) and IsValid(EquippedWeapon))
+	{
+		if (Character->IsLocallyControlled() and EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle)
+		{
+			Character->ShowSniperScopeWidget(bIsAiming);
+		}
+	}
 }
 
 void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
@@ -516,6 +525,7 @@ void UCombatComponent::InitializeCarriedAmmo()
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_Pistol, PistolStartAmmo);
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_SubmachineGun, SubmachineGunStartAmmo);
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_Shotgun, ShotgunStartAmmo);
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_SniperRifle, SniperRifleStartAmmo);
 }
 
 void UCombatComponent::SetActiveCarriedAmmo()
@@ -526,7 +536,7 @@ void UCombatComponent::SetActiveCarriedAmmo()
 		ActiveCarriedAmmo = *AmmoAmount;
 
 		Controller = Cast<ABlasterPlayerController>(Character->GetController());
-		
+
 		if (IsValid(Controller))
 		{
 			Controller->SetHUDCarriedAmmo(ActiveCarriedAmmo);

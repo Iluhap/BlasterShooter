@@ -36,6 +36,9 @@ public:
 	UFUNCTION()
 	void DisableGameplay();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowSniperScopeWidget(bool bShowScope);
+
 public:
 	void SetOverlappingWeapon(class AWeapon* Weapon);
 

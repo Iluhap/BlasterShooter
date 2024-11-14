@@ -60,13 +60,11 @@ FVector AHitScanWeapon::TraceEndWithScatter(const FVector& TraceStart, const FVe
 	const FVector TraceEnd = TraceStart + ToEndLocation * (FVector::Distance(TraceStart, HitTarget) + 100.f);
 
 	/*
-	
 	DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 10, FColor::Cyan, false, 2);
 	DrawDebugSphere(GetWorld(), EndLocation, 3, 10, FColor::Green, false, 2);
 	DrawDebugSphere(GetWorld(), HitTarget, 10, 10, FColor::Red, false, 2);
 	DrawDebugLine(GetWorld(), TraceStart, EndLocation, FColor::Yellow, false, 2.f);
 	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 2.f);
-
 	*/
 
 	return TraceEnd;
@@ -74,7 +72,13 @@ FVector AHitScanWeapon::TraceEndWithScatter(const FVector& TraceStart, const FVe
 
 bool AHitScanWeapon::TraceHit(const FVector& Start, const FVector& HitTarget, FHitResult& HitResult)
 {
-	const FVector End = bUserScatter ? TraceEndWithScatter(Start, HitTarget) : HitTarget;
+	FVector End;
+
+	if (bUserScatter)
+		End = TraceEndWithScatter(Start, HitTarget);
+	else
+		End = Start + (HitTarget - Start) * 1.25f;
+
 	FVector BeamEnd = End;
 
 	bool HasHit;

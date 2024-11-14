@@ -207,6 +207,9 @@ private:
 	UPROPERTY(EditAnywhere)
 	int32 ShotgunStartAmmo;
 
+	UPROPERTY(EditAnywhere)
+	int32 SniperRifleStartAmmo;
+
 	UPROPERTY(ReplicatedUsing=OnRep_CombatState)
 	ECombatState CombatState;
 };
