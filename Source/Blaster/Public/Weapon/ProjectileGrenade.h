@@ -4,23 +4,30 @@
 
 #include "CoreMinimal.h"
 #include "Projectile.h"
-#include "ProjectileBullet.generated.h"
+#include "ProjectileGrenade.generated.h"
 
 UCLASS()
-class BLASTER_API AProjectileBullet : public AProjectile
+class BLASTER_API AProjectileGrenade : public AProjectile
 {
 	GENERATED_BODY()
 
 public:
-	AProjectileBullet();
+	AProjectileGrenade();
+
+public:
+	virtual void Destroyed() override;
 
 protected:
 	virtual void BeginPlay() override;
+
+	UFUNCTION()
+	void OnBounce(const FHitResult& ImpactResult, const FVector& ImpactVelocity);
 
 	virtual void OnHit(UPrimitiveComponent* HitComponent,
 	                   AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                   FVector NormalImpulse, const FHitResult& Hit) override;
 
-public:
-	virtual void Tick(float DeltaTime) override;
+private:
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<USoundCue> BounceSound;
 };

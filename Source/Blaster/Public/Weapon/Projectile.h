@@ -27,15 +27,50 @@ protected:
 
 	virtual void PlayImpactEffects() const;
 
+	void StartDestroyTimer();
+	void ClearDestroyTimer();
+	void DestroyTimerFinished();
+
+	void ExplodeDamage();
+
 public:
 	virtual void Tick(float DeltaTime) override;
 
 protected:
-	UPROPERTY(EditAnywhere, Category=Damage)
-	float Damage;
+	void SpawnTrailSystem();
+	void HideProjectile();
+
+protected:
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<class UProjectileMovementComponent> MovementComponent;
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<class UBoxComponent> CollisionBox;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<class UNiagaraSystem> TrailSystem;
+
+	UPROPERTY()
+	TObjectPtr<class UNiagaraComponent> TrailSystemComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> ProjectileMesh;
+
+	UPROPERTY(EditAnywhere, Category=Damage)
+	float Damage;
+
+private:
+	UPROPERTY(EditAnywhere, Category=Damage)
+	float RadialDamageInnerRadius;
+
+	UPROPERTY(EditAnywhere, Category=Damage)
+	float RadialDamageOuterRadius;
+
+private:
+	FTimerHandle DestroyTimerHandle;
+
+	UPROPERTY(EditAnywhere)
+	float DestroyDelay;
 
 private:
 	UPROPERTY(EditAnywhere)

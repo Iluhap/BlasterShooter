@@ -26,20 +26,8 @@ protected:
 	                   FVector NormalImpulse, const FHitResult& Hit) override;
 
 private:
-	void DestroyTimerFinished();
-
-private:
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<class URocketMovementComponent> RocketMovementComponent;
-
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UStaticMeshComponent> RocketMesh;
-
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UNiagaraSystem> TrailSystem;
-
-	UPROPERTY()
-	TObjectPtr<class UNiagaraComponent> TrailSystemComponent;
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<USoundCue> ProjectileLoop;
@@ -49,10 +37,4 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<USoundAttenuation> LoopingSoundAttenuation;
-
-private:
-	FTimerHandle DestroyTimerHandle;
-
-	UPROPERTY(EditAnywhere)
-	float DestroyDelay;
 };

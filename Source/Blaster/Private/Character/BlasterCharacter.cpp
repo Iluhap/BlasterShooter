@@ -234,6 +234,11 @@ void ABlasterCharacter::PlayReloadMontage() const
 				SectionName = FName("Rifle");
 				break;
 			}
+		case EWeaponType::EWT_GrenadeLauncher:
+			{
+				SectionName = FName("Rifle");
+				break;
+			}
 		default:
 			{
 				break;

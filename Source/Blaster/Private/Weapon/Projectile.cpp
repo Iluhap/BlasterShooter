@@ -6,7 +6,10 @@
 #include "Components/BoxComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
+#include "NiagaraFunctionLibrary.h"
 #include "Blaster/Blaster.h"
+#include "NiagaraComponent.h"
+#include "NiagaraSystemInstanceController.h"
 
 
 AProjectile::AProjectile()
@@ -26,6 +29,10 @@ AProjectile::AProjectile()
 	CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECR_Block);
 
 	Damage = 20.f;
+	DestroyDelay = 3.f;
+
+	RadialDamageInnerRadius = 200.f;
+	RadialDamageOuterRadius = 500.f;
 }
 
 void AProjectile::Destroyed()
@@ -73,7 +80,81 @@ void AProjectile::PlayImpactEffects() const
 	}
 }
 
+void AProjectile::StartDestroyTimer()
+{
+	GetWorld()->GetTimerManager().SetTimer(DestroyTimerHandle,
+	                                       this, &AProjectile::DestroyTimerFinished,
+	                                       DestroyDelay);
+}
+
+void AProjectile::ClearDestroyTimer()
+{
+	GetWorld()->GetTimerManager().ClearTimer(DestroyTimerHandle);
+}
+
+void AProjectile::DestroyTimerFinished()
+{
+	Destroy();
+}
+
+void AProjectile::ExplodeDamage()
+{
+	if (const auto* FiringPawn = GetInstigator();
+		IsValid(FiringPawn))
+	{
+		if (auto* FiringController = FiringPawn->GetController();
+			IsValid(FiringController))
+		{
+			UGameplayStatics::ApplyRadialDamageWithFalloff(
+				this,
+				Damage,
+				Damage * 0.1f,
+				GetActorLocation(),
+				RadialDamageInnerRadius, RadialDamageOuterRadius, 1.f,
+				UDamageType::StaticClass(),
+				{},
+				this,
+				FiringController
+			);
+		}
+	}
+}
+
 void AProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+void AProjectile::SpawnTrailSystem()
+{
+	if (IsValid(TrailSystem))
+	{
+		TrailSystemComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			TrailSystem,
+			GetRootComponent(),
+			FName {},
+			GetActorLocation(),
+			GetActorRotation(),
+			EAttachLocation::KeepWorldPosition,
+			false
+		);
+	}
+}
+
+void AProjectile::HideProjectile()
+{
+	if (IsValid(ProjectileMesh))
+	{
+		ProjectileMesh->SetVisibility(false);
+	}
+	if (IsValid(CollisionBox))
+	{
+		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	if (IsValid(TrailSystemComponent)
+		and TrailSystemComponent->GetSystemInstanceController().IsValid())
+	{
+		TrailSystemComponent->GetSystemInstanceController()->Deactivate();
+	}
 }
