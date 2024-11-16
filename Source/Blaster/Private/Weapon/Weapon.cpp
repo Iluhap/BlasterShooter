@@ -28,6 +28,9 @@ AWeapon::AWeapon()
 	Mesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	SetMeshOutlineColor(CUSTOM_DEPTH_PURPLE);
+	EnableCustomDepth(true);
+
 	AreaSphere = CreateDefaultSubobject<USphereComponent>("Area Sphere");
 	AreaSphere->SetupAttachment(RootComponent);
 	AreaSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
@@ -117,6 +120,8 @@ void AWeapon::SetState(const EWeaponState NewState)
 			ShowPickupWidget(false);
 			AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			SetMeshCollision(false);
+			
+			EnableCustomDepth(false);
 
 			break;
 		}
@@ -127,6 +132,9 @@ void AWeapon::SetState(const EWeaponState NewState)
 				AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 			}
 			SetMeshCollision(true);
+
+			SetMeshOutlineColor(CUSTOM_DEPTH_BLUE);
+			EnableCustomDepth(true);
 			break;
 		}
 	default: break;
@@ -244,6 +252,23 @@ void AWeapon::UpdateHUDAmmo()
 	if (IsValid(OwningBlasterPlayerController))
 	{
 		OwningBlasterPlayerController->SetHUDWeaponAmmo(Ammo);
+	}
+}
+
+void AWeapon::EnableCustomDepth(bool bEnable)
+{
+	if (IsValid(Mesh))
+	{
+		Mesh->SetRenderCustomDepth(bEnable);
+	}
+}
+
+void AWeapon::SetMeshOutlineColor(int32 DepthValue)
+{
+	if (IsValid(Mesh))
+	{
+		Mesh->SetCustomDepthStencilValue(DepthValue);
+		Mesh->MarkRenderStateDirty();
 	}
 }
 

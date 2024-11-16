@@ -53,6 +53,9 @@ public:
 
 	void UpdateHUDAmmo();
 
+	void EnableCustomDepth(bool bEnable);
+	void SetMeshOutlineColor(int32 DepthValue);
+
 public:
 	bool IsEmpty() const;
 	bool IsFull() const;
