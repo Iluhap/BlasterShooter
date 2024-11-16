@@ -50,11 +50,12 @@ public:
 	virtual void Fire(const FVector& HitTarget);
 	void Dropped();
 	void AddAmmo(int32 AmmoAmount);
-	
+
 	void UpdateHUDAmmo();
 
 public:
 	bool IsEmpty() const;
+	bool IsFull() const;
 
 public:
 	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; };
@@ -131,7 +132,7 @@ private:
 private:
 	UPROPERTY(EditAnywhere)
 	EWeaponType Type;
-	
+
 	UPROPERTY(EditAnywhere)
 	float ZoomedFOV = 30.f;
 

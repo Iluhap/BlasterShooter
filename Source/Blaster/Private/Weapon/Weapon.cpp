@@ -5,6 +5,7 @@
 
 #include "Character/BlasterCharacter.h"
 #include "Character/BlasterPlayerController.h"
+#include "Components/CombatComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
@@ -226,6 +227,15 @@ void AWeapon::SpendRound()
 void AWeapon::OnRep_Ammo()
 {
 	UpdateHUDAmmo();
+
+	if (IsValid(OwningBlasterCharacter))
+	{
+		if (auto* CombatComponent = OwningBlasterCharacter->FindComponentByClass<UCombatComponent>();
+			IsValid(CombatComponent) and IsFull())
+		{
+			CombatComponent->JumpToShotgunEnd();
+		}
+	}
 }
 
 void AWeapon::UpdateHUDAmmo()
@@ -240,6 +250,11 @@ void AWeapon::UpdateHUDAmmo()
 bool AWeapon::IsEmpty() const
 {
 	return Ammo <= 0;
+}
+
+bool AWeapon::IsFull() const
+{
+	return Ammo == MagazineCapacity;
 }
 
 void AWeapon::SetOwningController()

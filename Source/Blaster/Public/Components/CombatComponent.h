@@ -38,6 +38,11 @@ public:
 
 	void TraceUnderCrosshair(FHitResult& HitResult);
 
+	UFUNCTION(BlueprintCallable)
+	void ShotgunShellReload();
+
+	void JumpToShotgunEnd();
+
 public: // Getters
 	bool IsWeaponEquipped() const;
 	bool IsAiming() const;
@@ -91,6 +96,8 @@ private:
 	int32 AmountToReload() const;
 
 	void UpdateAmmoValues();
+
+	void UpdateShotgunAmmoValues();
 
 	void PlayEquipSound() const;
 
