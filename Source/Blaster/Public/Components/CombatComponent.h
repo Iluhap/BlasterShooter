@@ -43,6 +43,11 @@ public:
 
 	void JumpToShotgunEnd();
 
+	void ThrowGrenade();
+
+	UFUNCTION(BlueprintCallable)
+	void ThrowGrenadeFinished();
+
 public: // Getters
 	bool IsWeaponEquipped() const;
 	bool IsAiming() const;
@@ -67,6 +72,9 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void ServerReload();
+
+	UFUNCTION(Server, Reliable)
+	void ServerThrowGrenade();
 
 private:
 	void SetMaxWalkSpeed(float Speed);

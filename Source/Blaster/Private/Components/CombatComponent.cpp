@@ -126,7 +126,11 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 {
-	if (not IsValid(Character) or not IsValid(WeaponToEquip)) return;
+	if (not IsValid(Character) or not IsValid(WeaponToEquip))
+		return;
+
+	if (CombatState != ECombatState::ECS_Unoccupied)
+		return;
 
 	if (IsValid(EquippedWeapon))
 	{
@@ -162,7 +166,7 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 void UCombatComponent::Reload()
 {
 	if (ActiveCarriedAmmo > 0
-		and CombatState != ECombatState::ECS_Reloading)
+		and CombatState == ECombatState::ECS_Unoccupied)
 	{
 		ServerReload();
 	}
@@ -461,6 +465,38 @@ void UCombatComponent::JumpToShotgunEnd()
 	}
 }
 
+void UCombatComponent::ThrowGrenade()
+{
+	if (CombatState != ECombatState::ECS_Unoccupied)
+		return;
+
+	CombatState = ECombatState::ECS_ThrowingGrenade;
+
+	if (not IsValid(Character))
+		return;
+
+	Character->PlayThrowGrenadeMontage();
+
+	if (not Character->HasAuthority())
+	{
+		ServerThrowGrenade();
+	}
+}
+
+void UCombatComponent::ThrowGrenadeFinished()
+{
+	CombatState = ECombatState::ECS_Unoccupied;
+}
+
+void UCombatComponent::ServerThrowGrenade_Implementation()
+{
+	CombatState = ECombatState::ECS_ThrowingGrenade;
+	if (Character)
+	{
+		Character->PlayThrowGrenadeMontage();
+	}
+}
+
 void UCombatComponent::SetMaxWalkSpeed(float Speed)
 {
 	if (IsValid(Character))
@@ -644,6 +680,15 @@ void UCombatComponent::OnRep_CombatState()
 			{
 				Fire();
 			}
+			break;
+		}
+	case ECombatState::ECS_ThrowingGrenade:
+		{
+			if (IsValid(Character) and not Character->IsLocallyControlled())
+			{
+				Character->PlayThrowGrenadeMontage();
+			}
+			break;
 		}
 	default:
 		{

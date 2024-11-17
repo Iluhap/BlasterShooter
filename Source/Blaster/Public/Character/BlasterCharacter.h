@@ -27,6 +27,7 @@ public:
 	void PlayFireMontage(bool IsAiming) const;
 	void PlayReloadMontage() const;
 	void PlayEliminationMontage() const;
+	void PlayThrowGrenadeMontage() const;
 
 	void Eliminate();
 
@@ -82,6 +83,7 @@ private:
 	void StopFire();
 
 	void Reload();
+	void ThrowGrenade();
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquip();
@@ -147,6 +149,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	TObjectPtr<UAnimMontage> ReloadMontage;
+	
+	UPROPERTY(EditAnywhere, Category = Combat)
+	TObjectPtr<UAnimMontage> ThrowGrenadeMontage;
 
 private:
 	UPROPERTY()
@@ -237,4 +242,7 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> ReloadAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> ThrowGrenadeAction;
 };

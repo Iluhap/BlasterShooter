@@ -88,6 +88,8 @@ void ABlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	Input->BindAction(FireAction, ETriggerEvent::Completed, this, &ABlasterCharacter::StopFire);
 
 	Input->BindAction(ReloadAction, ETriggerEvent::Completed, this, &ABlasterCharacter::Reload);
+
+	Input->BindAction(ThrowGrenadeAction, ETriggerEvent::Started, this, &ABlasterCharacter::ThrowGrenade);
 }
 
 void ABlasterCharacter::DisableGameplay()
@@ -261,6 +263,15 @@ void ABlasterCharacter::PlayEliminationMontage() const
 
 		const FName SectionName = SectionNames[FMath::Rand32() % 3];
 		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
+void ABlasterCharacter::PlayThrowGrenadeMontage() const
+{
+	if (auto* AnimInstance = GetMesh()->GetAnimInstance();
+		IsValid(AnimInstance) and IsValid(ThrowGrenadeMontage))
+	{
+		AnimInstance->Montage_Play(ThrowGrenadeMontage);
 	}
 }
 
@@ -595,6 +606,14 @@ void ABlasterCharacter::Reload()
 	if (IsValid(Combat))
 	{
 		Combat->Reload();
+	}
+}
+
+void ABlasterCharacter::ThrowGrenade()
+{
+	if (IsValid(Combat))
+	{
+		Combat->ThrowGrenade();
 	}
 }
 
