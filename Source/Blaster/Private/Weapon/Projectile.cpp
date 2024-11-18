@@ -27,6 +27,7 @@ AProjectile::AProjectile()
 	CollisionBox->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	CollisionBox->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 	CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECR_Block);
+	CollisionBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 
 	Damage = 20.f;
 	DestroyDelay = 3.f;
@@ -57,6 +58,12 @@ void AProjectile::BeginPlay()
 	if (HasAuthority())
 	{
 		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnHit);
+	}
+
+	if (auto* Mesh = GetOwner()->FindComponentByClass<USkeletalMeshComponent>();
+		IsValid(Mesh))
+	{
+		CollisionBox->IgnoreComponentWhenMoving(Mesh, true);
 	}
 }
 

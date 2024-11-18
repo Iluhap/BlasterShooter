@@ -17,6 +17,7 @@
 #include "Interfaces/InteractWithCrosshairInterface.h"
 #include "Weapon/WeaponTypes.h"
 #include "Sound/SoundCue.h"
+#include "Weapon/Projectile.h"
 
 
 UCombatComponent::UCombatComponent()
@@ -28,6 +29,9 @@ UCombatComponent::UCombatComponent()
 	EquippedWeapon = nullptr;
 	bAiming = false;
 	bFiring = false;
+
+	RightHandSocket = "RightHandSocket";
+	LeftHandSocket = "LeftHandSocket";
 
 	DefaultFOV = 0.f;
 	CurrentFOV = 0.f;
@@ -132,35 +136,67 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	if (CombatState != ECombatState::ECS_Unoccupied)
 		return;
 
-	if (IsValid(EquippedWeapon))
-	{
-		EquippedWeapon->Dropped();
-	}
+	DropEquippedWeapon();
 
 	EquippedWeapon = WeaponToEquip;
 
 	EquippedWeapon->SetState(EWeaponState::EWS_Equipped);
 
-	if (auto* Socket = Character->GetMesh()->GetSocketByName(EquipSocketName);
-		IsValid(Socket))
-	{
-		Socket->AttachActor(EquippedWeapon, Character->GetMesh());
-	}
+	AttachActorToSocket(EquippedWeapon, RightHandSocket);
 
 	EquippedWeapon->SetOwner(Character);
 	EquippedWeapon->UpdateHUDAmmo();
 
-	SetActiveCarriedAmmo();
+	UpdateActiveCarriedAmmo();
 
 	PlayEquipSound();
 
+	ReloadEmptyWeapon();
+
+	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+	Character->bUseControllerRotationYaw = true;
+}
+
+void UCombatComponent::DropEquippedWeapon()
+{
+	if (IsValid(EquippedWeapon))
+	{
+		EquippedWeapon->Dropped();
+	}
+}
+
+void UCombatComponent::AttachActorToSocket(AActor* Actor, const FName& AttachSocketName)
+{
+	if (not IsValid(Character)
+		or not IsValid(Character->GetMesh())
+		or not IsValid(Actor))
+		return;
+
+	if (auto* Socket = Character->GetMesh()->GetSocketByName(AttachSocketName);
+		IsValid(Socket))
+	{
+		Socket->AttachActor(Actor, Character->GetMesh());
+	}
+}
+
+void UCombatComponent::ReloadEmptyWeapon()
+{
 	if (EquippedWeapon->IsEmpty())
 	{
 		Reload();
 	}
+}
 
-	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
-	Character->bUseControllerRotationYaw = true;
+void UCombatComponent::ShowAttachedGrenade(bool bShow)
+{
+	if (not IsValid(Character))
+		return;
+
+	if (auto* GrenadeMesh = Character->GetAttachedGrenade();
+		IsValid(GrenadeMesh))
+	{
+		GrenadeMesh->SetVisibility(bShow);
+	}
 }
 
 void UCombatComponent::Reload()
@@ -273,7 +309,8 @@ void UCombatComponent::UpdateShotgunAmmoValues()
 
 void UCombatComponent::PlayEquipSound() const
 {
-	if (IsValid(EquippedWeapon->EquipSound))
+	if (IsValid(EquippedWeapon)
+		and IsValid(EquippedWeapon->EquipSound))
 	{
 		UGameplayStatics::PlaySoundAtLocation(
 			this,
@@ -476,6 +513,8 @@ void UCombatComponent::ThrowGrenade()
 		return;
 
 	Character->PlayThrowGrenadeMontage();
+	AttachActorToSocket(EquippedWeapon, LeftHandSocket);
+	ShowAttachedGrenade(true);
 
 	if (not Character->HasAuthority())
 	{
@@ -486,6 +525,39 @@ void UCombatComponent::ThrowGrenade()
 void UCombatComponent::ThrowGrenadeFinished()
 {
 	CombatState = ECombatState::ECS_Unoccupied;
+	AttachActorToSocket(EquippedWeapon, RightHandSocket);
+}
+
+void UCombatComponent::LaunchGrenade()
+{
+	ShowAttachedGrenade(false);
+
+	if (IsValid(Character) and Character->IsLocallyControlled())
+	{
+		ServerLaunchGrenade(HitTargetLocation);
+	}
+}
+
+void UCombatComponent::ServerLaunchGrenade_Implementation(const FVector_NetQuantize& Target)
+{
+	if (not IsValid(Character))
+		return;
+
+	if (const auto* Grenade = Character->GetAttachedGrenade();
+		IsValid(Grenade))
+	{
+		const FVector SpawnLocation = Grenade->GetComponentLocation();
+		const FVector ToTarget = Target - SpawnLocation;
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = Character;
+		SpawnParams.Instigator = Character;
+
+		GetWorld()->SpawnActor<AProjectile>(
+			GrenadeClass,
+			SpawnLocation, ToTarget.Rotation(),
+			SpawnParams);
+	}
 }
 
 void UCombatComponent::ServerThrowGrenade_Implementation()
@@ -494,6 +566,9 @@ void UCombatComponent::ServerThrowGrenade_Implementation()
 	if (Character)
 	{
 		Character->PlayThrowGrenadeMontage();
+		AttachActorToSocket(EquippedWeapon, LeftHandSocket);
+
+		ShowAttachedGrenade(true);
 	}
 }
 
@@ -630,7 +705,7 @@ void UCombatComponent::InitializeCarriedAmmo()
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_GrenadeLauncher, GrenadeLauncherStartAmmo);
 }
 
-void UCombatComponent::SetActiveCarriedAmmo()
+void UCombatComponent::UpdateActiveCarriedAmmo()
 {
 	const auto WeaponType = EquippedWeapon->GetWeaponType();
 	if (const auto* AmmoAmount = CarriedAmmoMap.Find(WeaponType))
@@ -687,6 +762,8 @@ void UCombatComponent::OnRep_CombatState()
 			if (IsValid(Character) and not Character->IsLocallyControlled())
 			{
 				Character->PlayThrowGrenadeMontage();
+				AttachActorToSocket(EquippedWeapon, LeftHandSocket);
+				ShowAttachedGrenade(true);
 			}
 			break;
 		}
@@ -703,11 +780,7 @@ void UCombatComponent::OnRep_EquippedWeapon()
 	{
 		EquippedWeapon->SetState(EWeaponState::EWS_Equipped);
 
-		if (auto* Socket = Character->GetMesh()->GetSocketByName(EquipSocketName);
-			IsValid(Socket))
-		{
-			Socket->AttachActor(EquippedWeapon, Character->GetMesh());
-		}
+		AttachActorToSocket(EquippedWeapon, RightHandSocket);
 
 		PlayEquipSound();
 

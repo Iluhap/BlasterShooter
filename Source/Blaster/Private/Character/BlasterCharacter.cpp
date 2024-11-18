@@ -51,6 +51,11 @@ ABlasterCharacter::ABlasterCharacter()
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 
+	GrenadeMesh = CreateDefaultSubobject<UStaticMeshComponent>("Grenade Mesh");
+	GrenadeMesh->SetupAttachment(GetMesh(), FName { "RightHandSocket" });
+	GrenadeMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GrenadeMesh->SetVisibility(false);
+
 	CameraThreshold = 200.f;
 
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;

@@ -30,4 +30,7 @@ protected:
 private:
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<USoundCue> BounceSound;
+
+	UPROPERTY(EditAnywhere)
+	bool bExplodeOnHit;
 };

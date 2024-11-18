@@ -28,6 +28,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 	void EquipWeapon(class AWeapon* WeaponToEquip);
+
 	void Reload();
 
 	UFUNCTION(BlueprintCallable)
@@ -47,6 +48,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ThrowGrenadeFinished();
+
+	UFUNCTION(BlueprintCallable)
+	void LaunchGrenade();
 
 public: // Getters
 	bool IsWeaponEquipped() const;
@@ -76,6 +80,9 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerThrowGrenade();
 
+	UFUNCTION(Server, Reliable)
+	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
+	
 private:
 	void SetMaxWalkSpeed(float Speed);
 
@@ -97,7 +104,7 @@ private:
 	bool CanFire() const;
 
 	void InitializeCarriedAmmo();
-	void SetActiveCarriedAmmo();
+	void UpdateActiveCarriedAmmo();
 
 	void HandleReload();
 
@@ -108,6 +115,14 @@ private:
 	void UpdateShotgunAmmoValues();
 
 	void PlayEquipSound() const;
+
+	void DropEquippedWeapon();
+
+	void AttachActorToSocket(AActor* Actor, const FName& AttachSocketName);
+
+	void ReloadEmptyWeapon();
+
+	void ShowAttachedGrenade(bool bVisible);
 
 private:
 	UFUNCTION()
@@ -131,6 +146,9 @@ private:
 
 	UPROPERTY(ReplicatedUsing=OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AProjectile> GrenadeClass;
 
 	UPROPERTY(Replicated)
 	bool bAiming;
@@ -170,7 +188,10 @@ private:
 
 private:
 	UPROPERTY(EditAnywhere)
-	FName EquipSocketName = "RightHandSocket";
+	FName RightHandSocket;
+
+	UPROPERTY(EditAnywhere)
+	FName LeftHandSocket;
 
 	UPROPERTY(EditAnywhere)
 	float BaseWalkSpeed;

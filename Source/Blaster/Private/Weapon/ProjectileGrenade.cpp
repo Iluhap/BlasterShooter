@@ -13,6 +13,8 @@ AProjectileGrenade::AProjectileGrenade()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	bExplodeOnHit = false;
+
 	ProjectileMesh = CreateDefaultSubobject<UStaticMeshComponent>("Projectile Mesh");
 	ProjectileMesh->SetupAttachment(RootComponent);
 	ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -56,6 +58,9 @@ void AProjectileGrenade::OnHit(UPrimitiveComponent* HitComponent,
                                AActor* OtherActor, UPrimitiveComponent* OtherComp,
                                FVector NormalImpulse, const FHitResult& Hit)
 {
+	if (not bExplodeOnHit)
+		return;
+
 	if (const auto* BlasterCharacter = Cast<ABlasterCharacter>(OtherActor);
 		IsValid(BlasterCharacter) and OtherActor != GetOwner())
 	{
