@@ -52,6 +52,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void LaunchGrenade();
 
+	void PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount);
+
 public: // Getters
 	bool IsWeaponEquipped() const;
 	bool IsAiming() const;
@@ -60,6 +62,7 @@ public: // Getters
 	FORCEINLINE FVector GetHitTarget() const { return HitTargetLocation; }
 	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
 	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
+	FORCEINLINE int32 GetGrenades() const { return Grenades; }
 
 private:
 	UFUNCTION(Server, Reliable)
@@ -82,7 +85,7 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
-	
+
 private:
 	void SetMaxWalkSpeed(float Speed);
 
@@ -105,6 +108,7 @@ private:
 
 	void InitializeCarriedAmmo();
 	void UpdateActiveCarriedAmmo();
+	void UpdateHUDGrenades();
 
 	void HandleReload();
 
@@ -133,6 +137,9 @@ private:
 
 	UFUNCTION()
 	void OnRep_CombatState();
+
+	UFUNCTION()
+	void OnRep_Grenades();
 
 private:
 	UPROPERTY()
@@ -224,6 +231,12 @@ private:
 
 	UPROPERTY(Replicated, ReplicatedUsing=OnRep_ActiveCarriedAmmo)
 	int32 ActiveCarriedAmmo;
+
+	UPROPERTY(ReplicatedUsing=OnRep_Grenades)
+	int32 Grenades;
+
+	UPROPERTY(EditAnywhere)
+	int32 MaxGrenades;
 
 	UPROPERTY()
 	TMap<EWeaponType, int32> CarriedAmmoMap;

@@ -60,7 +60,10 @@ UCombatComponent::UCombatComponent()
 
 	bCanFire = true;
 
+	MaxGrenades = 4;
+
 	ActiveCarriedAmmo = 0;
+	Grenades = MaxGrenades;
 
 	CombatState = ECombatState::ECS_Unoccupied;
 
@@ -84,6 +87,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(UCombatComponent, bAiming);
 	DOREPLIFETIME_CONDITION(UCombatComponent, ActiveCarriedAmmo, COND_OwnerOnly);
 	DOREPLIFETIME(UCombatComponent, CombatState);
+	DOREPLIFETIME(UCombatComponent, Grenades);
 }
 
 void UCombatComponent::BeginPlay()
@@ -504,6 +508,9 @@ void UCombatComponent::JumpToShotgunEnd()
 
 void UCombatComponent::ThrowGrenade()
 {
+	if (Grenades == 0)
+		return;
+
 	if (CombatState != ECombatState::ECS_Unoccupied)
 		return;
 
@@ -520,6 +527,29 @@ void UCombatComponent::ThrowGrenade()
 	{
 		ServerThrowGrenade();
 	}
+	else
+	{
+		Grenades = FMath::Clamp(Grenades - 1, 0, MaxGrenades);
+		UpdateHUDGrenades();
+	}
+}
+
+void UCombatComponent::ServerThrowGrenade_Implementation()
+{
+	if (Grenades == 0)
+		return;
+
+	CombatState = ECombatState::ECS_ThrowingGrenade;
+	if (Character)
+	{
+		Character->PlayThrowGrenadeMontage();
+		AttachActorToSocket(EquippedWeapon, LeftHandSocket);
+
+		ShowAttachedGrenade(true);
+	}
+
+	Grenades = FMath::Clamp(Grenades - 1, 0, MaxGrenades);
+	UpdateHUDGrenades();
 }
 
 void UCombatComponent::ThrowGrenadeFinished()
@@ -535,6 +565,22 @@ void UCombatComponent::LaunchGrenade()
 	if (IsValid(Character) and Character->IsLocallyControlled())
 	{
 		ServerLaunchGrenade(HitTargetLocation);
+	}
+}
+
+void UCombatComponent::PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount)
+{
+	if (CarriedAmmoMap.Contains(WeaponType))
+	{
+		CarriedAmmoMap[WeaponType] += AmmoAmount;
+	}
+	UpdateActiveCarriedAmmo();
+
+	if (IsValid(EquippedWeapon)
+		and EquippedWeapon->IsEmpty()
+		and EquippedWeapon->GetWeaponType() == WeaponType)
+	{
+		Reload();
 	}
 }
 
@@ -557,18 +603,6 @@ void UCombatComponent::ServerLaunchGrenade_Implementation(const FVector_NetQuant
 			GrenadeClass,
 			SpawnLocation, ToTarget.Rotation(),
 			SpawnParams);
-	}
-}
-
-void UCombatComponent::ServerThrowGrenade_Implementation()
-{
-	CombatState = ECombatState::ECS_ThrowingGrenade;
-	if (Character)
-	{
-		Character->PlayThrowGrenadeMontage();
-		AttachActorToSocket(EquippedWeapon, LeftHandSocket);
-
-		ShowAttachedGrenade(true);
 	}
 }
 
@@ -707,6 +741,9 @@ void UCombatComponent::InitializeCarriedAmmo()
 
 void UCombatComponent::UpdateActiveCarriedAmmo()
 {
+	if (not IsValid(EquippedWeapon))
+		return;
+	
 	const auto WeaponType = EquippedWeapon->GetWeaponType();
 	if (const auto* AmmoAmount = CarriedAmmoMap.Find(WeaponType))
 	{
@@ -718,6 +755,16 @@ void UCombatComponent::UpdateActiveCarriedAmmo()
 		{
 			Controller->SetHUDCarriedAmmo(ActiveCarriedAmmo);
 		}
+	}
+}
+
+void UCombatComponent::UpdateHUDGrenades()
+{
+	Controller = Cast<ABlasterPlayerController>(Character->GetController());
+
+	if (IsValid(Controller))
+	{
+		Controller->SetHUDGrenades(Grenades);
 	}
 }
 
@@ -772,6 +819,11 @@ void UCombatComponent::OnRep_CombatState()
 			break;
 		}
 	}
+}
+
+void UCombatComponent::OnRep_Grenades()
+{
+	UpdateHUDGrenades();
 }
 
 void UCombatComponent::OnRep_EquippedWeapon()

@@ -84,6 +84,12 @@ void ABlasterPlayerController::PollInit()
 		SetHUDHealth(SavedHealth, SavedMaxHealth);
 		SetHUDScore(SavedScoreAmount);
 		SetHUDDefeats(SavedDefeats);
+
+		if (const auto* CombatComponent = GetPawn()->FindComponentByClass<UCombatComponent>();
+			IsValid(CombatComponent))
+		{
+			SetHUDGrenades(CombatComponent->GetGrenades());
+		}
 	}
 }
 
@@ -364,6 +370,20 @@ void ABlasterPlayerController::SetHUDCarriedAmmo(int32 Ammo)
 	{
 		const auto AmmoText = FString::Printf(TEXT("%d"), Ammo);
 		BlasterHUD->CharacterOverlay->ActiveCarriedAmmoAmount->SetText(FText::FromString(AmmoText));
+	}
+}
+
+void ABlasterPlayerController::SetHUDGrenades(int32 Grenades)
+{
+	SetHUD();
+
+	if (not IsHUDValid())
+		return;
+
+	if (IsValid(BlasterHUD->CharacterOverlay->GrenadesText))
+	{
+		const auto GrenadesText = FString::Printf(TEXT("%d"), Grenades);
+		BlasterHUD->CharacterOverlay->GrenadesText->SetText(FText::FromString(GrenadesText));
 	}
 }
 

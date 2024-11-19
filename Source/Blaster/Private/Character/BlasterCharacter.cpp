@@ -416,6 +416,9 @@ void ABlasterCharacter::OnRep_Health()
 void ABlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
                                       AController* InstigatedBy, AActor* DamageCauser)
 {
+	if (bIsEliminated)
+		return;
+
 	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
 
 	UpdateHUDHealth();
