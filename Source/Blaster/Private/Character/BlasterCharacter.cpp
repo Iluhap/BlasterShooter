@@ -7,8 +7,10 @@
 #include "InputActionValue.h"
 #include "Blaster/Blaster.h"
 #include "Character/BlasterPlayerController.h"
+#include "Components/BuffComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/CombatComponent.h"
+#include "Components/HealthComponent.h"
 #include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameMode/BlasterGameMode.h"
@@ -36,11 +38,17 @@ ABlasterCharacter::ABlasterCharacter()
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
-	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("Overhead Widget"));
+	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>("Overhead Widget");
 	OverheadWidget->SetupAttachment(RootComponent);
 
 	Combat = CreateDefaultSubobject<UCombatComponent>("Combat Component");
 	Combat->SetIsReplicated(true);
+
+	Health = CreateDefaultSubobject<UHealthComponent>("Health Component");
+	Health->SetIsReplicated(true);
+
+	Buff = CreateDefaultSubobject<UBuffComponent>("Buff Component");
+	Buff->SetIsReplicated(true);
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 
@@ -63,9 +71,6 @@ ABlasterCharacter::ABlasterCharacter()
 
 	NetUpdateFrequency = 66.f;
 	MinNetUpdateFrequency = 33.f;
-
-	MaxHealth = 100.f;
-	Health = MaxHealth;
 
 	EliminationDelay = 1.5f;
 
@@ -108,7 +113,6 @@ void ABlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME_CONDITION(ABlasterCharacter, OverlappingWeapon, COND_OwnerOnly);
-	DOREPLIFETIME(ABlasterCharacter, Health);
 }
 
 void ABlasterCharacter::BeginPlay()
@@ -120,7 +124,9 @@ void ABlasterCharacter::BeginPlay()
 	if (HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ABlasterCharacter::ReceiveDamage);
+		Health->OnDeath.AddDynamic(this, &ABlasterCharacter::OnDeath);
 	}
+	Health->OnHealthUpdate.AddDynamic(this, &ABlasterCharacter::OnHealthUpdate);
 }
 
 void ABlasterCharacter::PollInit()
@@ -256,7 +262,6 @@ void ABlasterCharacter::PlayReloadMontage() const
 	}
 }
 
-
 void ABlasterCharacter::PlayEliminationMontage() const
 {
 	const TArray<FName> SectionNames = { "Elim1", "Elim2", "Elim3" };
@@ -319,7 +324,6 @@ void ABlasterCharacter::MulticastEliminate_Implementation()
 		ShowSniperScopeWidget(false);
 	}
 }
-
 
 void ABlasterCharacter::EliminationTimerFinished()
 {
@@ -407,38 +411,35 @@ float ABlasterCharacter::GetSpeed() const
 	return Velocity.Size();
 }
 
-void ABlasterCharacter::OnRep_Health()
-{
-	UpdateHUDHealth();
-	PlayHitReactMontage();
-}
-
 void ABlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
                                       AController* InstigatedBy, AActor* DamageCauser)
 {
-	if (bIsEliminated)
-		return;
+}
 
-	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
+void ABlasterCharacter::OnDeath(AController* InstigatedBy)
+{
+	if (auto* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+		IsValid(BlasterGameMode))
+	{
+		BlasterPlayerController = IsValid(BlasterPlayerController)
+			                          ? Cast<ABlasterPlayerController>(GetController())
+			                          : BlasterPlayerController;
+
+		auto* AttackerController = Cast<ABlasterPlayerController>(InstigatedBy);
+
+		BlasterGameMode->PlayerEliminated(this, BlasterPlayerController,
+		                                  AttackerController);
+	}
+}
+
+void ABlasterCharacter::OnHealthUpdate(const float& NewHealth, const float& NewMaxHealth, EHealthUpdateType UpdateType)
+{
+	if (UpdateType == EHealthUpdateType::EHU_Damage)
+	{
+		PlayHitReactMontage();
+	}
 
 	UpdateHUDHealth();
-	PlayHitReactMontage();
-
-	if (Health <= 0.f)
-	{
-		if (auto* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
-			IsValid(BlasterGameMode))
-		{
-			BlasterPlayerController = IsValid(BlasterPlayerController)
-				                          ? Cast<ABlasterPlayerController>(GetController())
-				                          : BlasterPlayerController;
-
-			auto* AttackerController = Cast<ABlasterPlayerController>(InstigatedBy);
-
-			BlasterGameMode->PlayerEliminated(this, BlasterPlayerController,
-			                                  AttackerController);
-		}
-	}
 }
 
 void ABlasterCharacter::UpdateHUDHealth()
@@ -450,7 +451,7 @@ void ABlasterCharacter::UpdateHUDHealth()
 
 	if (IsValid(BlasterPlayerController))
 	{
-		BlasterPlayerController->SetHUDHealth(Health, MaxHealth);
+		BlasterPlayerController->SetHUDHealth(Health->GetHealth(), Health->GetMaxHealth());
 	}
 }
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BlasterTypes/HealthUpdateType.h"
 #include "BlasterTypes/TurningInPlace.h"
 #include "Components/TimelineComponent.h"
 #include "GameFramework/Character.h"
@@ -56,8 +57,6 @@ public:
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
 	FORCEINLINE bool IsEliminated() const { return bIsEliminated; }
-	FORCEINLINE float GetHealth() const { return Health; }
-	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 	FORCEINLINE bool IsGameplayDisabled() const { return bDisableGameplay; }
 	FORCEINLINE UAnimMontage* GetReloadMontage() const { return ReloadMontage; }
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const { return GrenadeMesh; };
@@ -68,9 +67,6 @@ protected:
 private:
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
-
-	UFUNCTION()
-	void OnRep_Health();
 
 private:
 	void Move(const struct FInputActionValue& Value);
@@ -107,6 +103,12 @@ private:
 	                   float Damage, const UDamageType* DamageType,
 	                   AController* InstigatedBy, AActor* DamageCauser);
 
+	UFUNCTION()
+	void OnDeath(AController* InstigatedBy);
+
+	UFUNCTION()
+	void OnHealthUpdate(const float& NewHealth, const float& NewMaxHealth, EHealthUpdateType UpdateType);
+
 	void UpdateHUDHealth();
 
 	UFUNCTION()
@@ -134,6 +136,12 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<class UCombatComponent> Combat;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
+	TObjectPtr<class UHealthComponent> Health;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
+	TObjectPtr<class UBuffComponent> Buff;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<class UWidgetComponent> OverheadWidget;
@@ -185,12 +193,6 @@ private:
 	float ProxyYaw;
 
 	float TimeSinceLastMovementRep;
-
-	UPROPERTY(EditAnywhere, Category="PlayerStats")
-	float MaxHealth;
-
-	UPROPERTY(ReplicatedUsing=OnRep_Health, VisibleAnywhere, Category="PlayerStats")
-	float Health;
 
 	UPROPERTY(EditDefaultsOnly)
 	bool bIsEliminated;

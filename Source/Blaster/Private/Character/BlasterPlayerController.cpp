@@ -6,6 +6,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Character/BlasterCharacter.h"
 #include "Components/CombatComponent.h"
+#include "Components/HealthComponent.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "GameFramework/GameMode.h"
@@ -68,10 +69,10 @@ void ABlasterPlayerController::OnPossess(APawn* PawnToPossess)
 
 	SetHUD();
 
-	if (const auto* BlasterCharacter = Cast<ABlasterCharacter>(PawnToPossess);
-		IsValid(BlasterCharacter))
+	if (const auto* Health = PawnToPossess->FindComponentByClass<UHealthComponent>();
+		IsValid(Health))
 	{
-		SetHUDHealth(BlasterCharacter->GetHealth(), BlasterCharacter->GetMaxHealth());
+		SetHUDHealth(Health->GetHealth(), Health->GetMaxHealth());
 	}
 }
 

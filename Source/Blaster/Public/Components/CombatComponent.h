@@ -54,6 +54,8 @@ public:
 
 	void PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount);
 
+	void Heal(int32 HealthAmount);
+
 public: // Getters
 	bool IsWeaponEquipped() const;
 	bool IsAiming() const;
