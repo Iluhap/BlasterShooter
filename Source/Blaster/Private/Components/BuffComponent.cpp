@@ -12,6 +12,11 @@ UBuffComponent::UBuffComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 
 	Character = nullptr;
+
+	BaseWalkSpeed = 0.f;
+	BaseCrouchSpeed = 0.f;
+
+	BaseJumpZVelocity = 0.f;
 }
 
 void UBuffComponent::BeginPlay()
@@ -24,6 +29,7 @@ void UBuffComponent::BeginPlay()
 	{
 		BaseWalkSpeed = Character->GetCharacterMovement()->MaxWalkSpeed;
 		BaseCrouchSpeed = Character->GetCharacterMovement()->MaxWalkSpeedCrouched;
+		BaseJumpZVelocity = Character->GetCharacterMovement()->JumpZVelocity;
 	}
 }
 
@@ -33,7 +39,7 @@ void UBuffComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
-void UBuffComponent::SpeedUp(float WalkSpeedBoost, float CrouchSpeedBoost, float Duration)
+void UBuffComponent::BoostSpeed(float WalkSpeedBoost, float CrouchSpeedBoost, float Duration)
 {
 	MulticastSetMovementSpeed(WalkSpeedBoost, CrouchSpeedBoost);
 
@@ -42,9 +48,31 @@ void UBuffComponent::SpeedUp(float WalkSpeedBoost, float CrouchSpeedBoost, float
 	                                       Duration);
 }
 
+void UBuffComponent::BoostJump(float JumpZVelocity, float Duration)
+{
+	MulticastJumpVelocity(JumpZVelocity);
+
+	GetWorld()->GetTimerManager().SetTimer(JumpBoostTimerHandle,
+	                                       this, &UBuffComponent::ResetJumpVelocity,
+	                                       Duration);
+}
+
 void UBuffComponent::ResetSpeed()
 {
 	MulticastSetMovementSpeed(BaseWalkSpeed, BaseCrouchSpeed);
+}
+
+void UBuffComponent::ResetJumpVelocity()
+{
+	MulticastJumpVelocity(BaseJumpZVelocity);
+}
+
+void UBuffComponent::MulticastJumpVelocity_Implementation(float JumpZVelocity)
+{
+	if (IsValid(Character))
+	{
+		Character->GetCharacterMovement()->JumpZVelocity = JumpZVelocity;
+	}
 }
 
 void UBuffComponent::MulticastSetMovementSpeed_Implementation(float WalkSpeed, float CrouchSpeed)

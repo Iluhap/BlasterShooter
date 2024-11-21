@@ -2,19 +2,27 @@
 
 
 #include "Pickups/JumpPickup.h"
-
+#include "Components/BuffComponent.h"
 
 AJumpPickup::AJumpPickup()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	JumpZVelocityBoost = 4000.f;
+	Duration = 5.f;
 }
 
-void AJumpPickup::BeginPlay()
+void AJumpPickup::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent,
+                                       AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+                                       bool bFromSweep, const FHitResult& SweepResult)
 {
-	Super::BeginPlay();
-}
+	Super::OnSphereBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 
-void AJumpPickup::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
+	if (auto* BuffComponent = OtherActor->FindComponentByClass<UBuffComponent>();
+		IsValid(BuffComponent))
+	{
+		BuffComponent->BoostJump(JumpZVelocityBoost, Duration);
+	}
+
+	Destroy();
 }

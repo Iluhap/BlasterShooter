@@ -3,16 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AmmoPickup.h"
-#include "JumpPickup.generated.h"
+#include "Pickup.h"
+#include "SpeedPickup.generated.h"
 
 UCLASS()
-class BLASTER_API AJumpPickup : public AAmmoPickup
+class BLASTER_API ASpeedPickup : public APickup
 {
 	GENERATED_BODY()
 
 public:
-	AJumpPickup();
+	ASpeedPickup();
 
 protected:
 	virtual void OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent,
@@ -20,14 +20,12 @@ protected:
 	                                  bool bFromSweep, const FHitResult& SweepResult) override;
 
 private:
-	void ResetJumpVelocity();
-	
-private:
 	UPROPERTY(EditAnywhere)
-	float JumpZVelocityBoost;
+	float WalkSpeedBoost;
+
+	UPROPERTY(EditAnywhere)
+	float CrouchSpeedBoost;
 
 	UPROPERTY(EditAnywhere)
 	float Duration;
-
-	FTimerHandle JumpBoostTimerHandle;
 };

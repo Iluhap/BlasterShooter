@@ -16,7 +16,8 @@ public:
 	UBuffComponent();
 
 public:
-	void SpeedUp(float WalkSpeedBoost, float CrouchSpeedBoost, float Duration);
+	void BoostSpeed(float WalkSpeedBoost, float CrouchSpeedBoost, float Duration);
+	void BoostJump(float JumpZVelocity, float Duration);
 
 protected:
 	virtual void BeginPlay() override;
@@ -26,17 +27,24 @@ public:
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
-	void ResetSpeed();
-
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastSetMovementSpeed(float WalkSpeed, float CrouchSpeed);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastJumpVelocity(float JumpZVelocity);
+
+	void ResetSpeed();
+	void ResetJumpVelocity();
 
 private:
 	UPROPERTY()
 	class ABlasterCharacter* Character;
 
 	FTimerHandle SpeedBoostTimerHandle;
+	FTimerHandle JumpBoostTimerHandle;
 
 	float BaseWalkSpeed;
 	float BaseCrouchSpeed;
+
+	float BaseJumpZVelocity;
 };
