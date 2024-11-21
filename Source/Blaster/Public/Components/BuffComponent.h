@@ -15,6 +15,9 @@ class BLASTER_API UBuffComponent : public UActorComponent
 public:
 	UBuffComponent();
 
+public:
+	void SpeedUp(float WalkSpeedBoost, float CrouchSpeedBoost, float Duration);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -23,6 +26,17 @@ public:
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
+	void ResetSpeed();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastSetMovementSpeed(float WalkSpeed, float CrouchSpeed);
+
+private:
 	UPROPERTY()
 	class ABlasterCharacter* Character;
+
+	FTimerHandle SpeedBoostTimerHandle;
+
+	float BaseWalkSpeed;
+	float BaseCrouchSpeed;
 };
