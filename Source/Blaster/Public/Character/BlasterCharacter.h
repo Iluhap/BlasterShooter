@@ -109,7 +109,11 @@ private:
 	UFUNCTION()
 	void OnHealthUpdate(const float& NewHealth, const float& NewMaxHealth, EHealthUpdateType UpdateType);
 
+	UFUNCTION()
+	void OnShieldUpdate(const float& NewShield, const float& NewMaxShield);
+
 	void UpdateHUDHealth();
+	void UpdateHUDShield();
 
 	UFUNCTION()
 	void EliminationTimerFinished();

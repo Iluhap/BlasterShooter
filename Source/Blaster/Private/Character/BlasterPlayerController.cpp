@@ -73,6 +73,7 @@ void ABlasterPlayerController::OnPossess(APawn* PawnToPossess)
 		IsValid(Health))
 	{
 		SetHUDHealth(Health->GetHealth(), Health->GetMaxHealth());
+		SetHUDShield(Health->GetShield(), Health->GetMaxShield());
 	}
 }
 
@@ -83,6 +84,7 @@ void ABlasterPlayerController::PollInit()
 	if (IsHUDValid())
 	{
 		SetHUDHealth(SavedHealth, SavedMaxHealth);
+		SetHUDShield(SavedShield, SavedMaxShield);
 		SetHUDScore(SavedScoreAmount);
 		SetHUDDefeats(SavedDefeats);
 
@@ -312,6 +314,32 @@ void ABlasterPlayerController::SetHUDHealth(float Health, float MaxHealth)
 	}
 }
 
+void ABlasterPlayerController::SetHUDShield(float Shield, float MaxShield)
+{
+	SetHUD();
+
+	if (not IsHUDValid())
+	{
+		SavedShield = Shield;
+		SavedMaxShield = MaxShield;
+		return;
+	}
+
+	if (IsValid(BlasterHUD->CharacterOverlay->ShieldBar)
+		and IsValid(BlasterHUD->CharacterOverlay->ShieldText))
+	{
+		SetShieldVisibility(Shield > 0 ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+
+		const float ShieldPercent = Shield / MaxShield;
+		BlasterHUD->CharacterOverlay->ShieldBar->SetPercent(ShieldPercent);
+		const FString HealthText = FString::Printf(TEXT("%d/%d"),
+		                                           FMath::CeilToInt(Shield),
+		                                           FMath::CeilToInt(MaxShield));
+
+		BlasterHUD->CharacterOverlay->ShieldText->SetText(FText::FromString(HealthText));
+	}
+}
+
 void ABlasterPlayerController::SetHUDScore(float ScoreAmount)
 {
 	SetHUD();
@@ -399,6 +427,19 @@ FText ABlasterPlayerController::MakeTimeTextFromSeconds(float TimeSeconds) const
 	const int32 Seconds = TimeSeconds - Minutes * 60;
 
 	return FText::FromString(FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds));
+}
+
+void ABlasterPlayerController::SetShieldVisibility(ESlateVisibility Visibility)
+{
+	SetHUD();
+
+	if (IsHUDValid()
+		and BlasterHUD->CharacterOverlay->ShieldBar
+		and BlasterHUD->CharacterOverlay->ShieldText)
+	{
+		BlasterHUD->CharacterOverlay->ShieldBar->SetVisibility(Visibility);
+		BlasterHUD->CharacterOverlay->ShieldText->SetVisibility(Visibility);
+	}
 }
 
 void ABlasterPlayerController::SetHUDMatchCountdown(float CountdownTime)

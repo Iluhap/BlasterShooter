@@ -7,7 +7,7 @@
 
 AHealthPickup::AHealthPickup()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
 
 	HealAmount = 100.f;

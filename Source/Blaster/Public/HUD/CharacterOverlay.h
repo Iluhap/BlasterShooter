@@ -22,6 +22,12 @@ public:
 	TObjectPtr<class UTextBlock> HealthText;
 
 	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UProgressBar> ShieldBar;
+
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UTextBlock> ShieldText;
+
+	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTextBlock> ScoreAmount;
 
 	UPROPERTY(meta=(BindWidget))
@@ -35,8 +41,7 @@ public:
 
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTextBlock> MatchCountdownText;
-	
+
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTextBlock> GrenadesText;
-	
 };

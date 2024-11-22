@@ -743,7 +743,7 @@ void UCombatComponent::UpdateActiveCarriedAmmo()
 {
 	if (not IsValid(EquippedWeapon))
 		return;
-	
+
 	const auto WeaponType = EquippedWeapon->GetWeaponType();
 	if (const auto* AmmoAmount = CarriedAmmoMap.Find(WeaponType))
 	{
@@ -760,6 +760,9 @@ void UCombatComponent::UpdateActiveCarriedAmmo()
 
 void UCombatComponent::UpdateHUDGrenades()
 {
+	if (not IsValid(Character))
+		return;
+
 	Controller = Cast<ABlasterPlayerController>(Character->GetController());
 
 	if (IsValid(Controller))

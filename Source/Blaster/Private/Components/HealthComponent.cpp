@@ -13,6 +13,20 @@ UHealthComponent::UHealthComponent()
 	MaxHealth = 100.f;
 	Health = MaxHealth;
 
+	bHealing = false;
+	HealingRate = 0.f;
+	AmountToHeal = 0.f;
+
+	bRestoringShield = false;
+	ShieldRestorationRate = MaxShield / ShieldRestorationTime;
+	AmountToHeal = 0.f;
+
+	MaxShield = 100.f;
+	Shield = 0.f;
+
+	ShieldReductionTime = 30.f;
+	ShieldReductionRate = MaxShield / ShieldReductionTime;
+
 	LastDamageInstigator = nullptr;
 }
 
@@ -20,8 +34,11 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(UHealthComponent, Health);
 	DOREPLIFETIME(UHealthComponent, MaxHealth);
+	DOREPLIFETIME(UHealthComponent, Health);
+
+	DOREPLIFETIME(UHealthComponent, MaxShield);
+	DOREPLIFETIME(UHealthComponent, Shield);
 }
 
 void UHealthComponent::BeginPlay()
@@ -35,6 +52,9 @@ void UHealthComponent::BeginPlay()
 
 	Health = MaxHealth;
 	OnHealthUpdate.Broadcast(Health, MaxHealth, EHealthUpdateType::EHU_Healing);
+
+	RestoreShield(MaxShield);
+	OnShieldUpdate.Broadcast(Shield, MaxShield);
 }
 
 void UHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType,
@@ -43,6 +63,7 @@ void UHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	HealTick(DeltaTime);
+	ShieldTick(DeltaTime);
 }
 
 void UHealthComponent::Heal(float HealAmount, float HealingTime)
@@ -50,6 +71,12 @@ void UHealthComponent::Heal(float HealAmount, float HealingTime)
 	bHealing = true;
 	AmountToHeal = HealAmount;
 	HealingRate = HealAmount / HealingTime;
+}
+
+void UHealthComponent::RestoreShield(float RestoreAmount)
+{
+	Shield = FMath::Clamp(Shield + RestoreAmount, 0, MaxShield);
+	OnShieldUpdate.Broadcast(Shield, MaxShield);
 }
 
 void UHealthComponent::HealTick(float DeltaTime)
@@ -71,6 +98,27 @@ void UHealthComponent::HealTick(float DeltaTime)
 	}
 }
 
+void UHealthComponent::ShieldTick(float DeltaTime)
+{
+	if (IsDead() or Shield <= 0)
+		return;
+
+	const float ReduceShieldThisFrame = ShieldReductionRate * DeltaTime;
+	ReduceShield(ReduceShieldThisFrame);
+}
+
+void UHealthComponent::ReduceHealth(float Damage)
+{
+	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
+	OnHealthUpdate.Broadcast(Health, MaxHealth, EHealthUpdateType::EHU_Damage);
+}
+
+void UHealthComponent::ReduceShield(float ReduceAmount)
+{
+	Shield = FMath::Clamp(Shield - ReduceAmount, 0, MaxShield);
+	OnShieldUpdate.Broadcast(Shield, MaxShield);
+}
+
 void UHealthComponent::OnTakeDamage(AActor* DamagedActor,
                                     float Damage, const UDamageType* DamageType,
                                     AController* InstigatedBy, AActor* DamageCauser)
@@ -78,11 +126,16 @@ void UHealthComponent::OnTakeDamage(AActor* DamagedActor,
 	if (IsDead())
 		return;
 
-	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
-
-	OnHealthUpdate.Broadcast(Health, MaxHealth, EHealthUpdateType::EHU_Damage);
-
 	LastDamageInstigator = InstigatedBy;
+
+	// Shield breaks without damaging the health even if damage was higher than shield amount
+	if (IsShieldActive())
+	{
+		ReduceShield(Damage);
+		return;
+	}
+
+	ReduceHealth(Damage);
 
 	if (GetOwner()->HasAuthority())
 	{
@@ -95,11 +148,23 @@ void UHealthComponent::OnTakeDamage(AActor* DamagedActor,
 
 void UHealthComponent::OnRep_Health(float LastHealth)
 {
-	const EHealthUpdateType UpdateType = Health >= LastHealth ? EHealthUpdateType::EHU_Healing : EHealthUpdateType::EHU_Damage;
+	const EHealthUpdateType UpdateType = Health >= LastHealth
+		                                     ? EHealthUpdateType::EHU_Healing
+		                                     : EHealthUpdateType::EHU_Damage;
 	OnHealthUpdate.Broadcast(Health, MaxHealth, UpdateType);
 }
 
 void UHealthComponent::OnRep_MaxHealth()
 {
 	OnHealthUpdate.Broadcast(Health, MaxHealth, EHealthUpdateType::EHU_Init);
+}
+
+void UHealthComponent::OnRep_Shield()
+{
+	OnShieldUpdate.Broadcast(Shield, MaxShield);
+}
+
+void UHealthComponent::OnRep_MaxShield()
+{
+	OnShieldUpdate.Broadcast(Shield, MaxShield);
 }

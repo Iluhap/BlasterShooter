@@ -127,6 +127,7 @@ void ABlasterCharacter::BeginPlay()
 		Health->OnDeath.AddDynamic(this, &ABlasterCharacter::OnDeath);
 	}
 	Health->OnHealthUpdate.AddDynamic(this, &ABlasterCharacter::OnHealthUpdate);
+	Health->OnShieldUpdate.AddDynamic(this, &ABlasterCharacter::OnShieldUpdate);
 }
 
 void ABlasterCharacter::PollInit()
@@ -442,6 +443,11 @@ void ABlasterCharacter::OnHealthUpdate(const float& NewHealth, const float& NewM
 	UpdateHUDHealth();
 }
 
+void ABlasterCharacter::OnShieldUpdate(const float& NewShield, const float& NewMaxShield)
+{
+	UpdateHUDShield();
+}
+
 void ABlasterCharacter::UpdateHUDHealth()
 {
 	if (not IsValid(BlasterPlayerController))
@@ -452,6 +458,19 @@ void ABlasterCharacter::UpdateHUDHealth()
 	if (IsValid(BlasterPlayerController))
 	{
 		BlasterPlayerController->SetHUDHealth(Health->GetHealth(), Health->GetMaxHealth());
+	}
+}
+
+void ABlasterCharacter::UpdateHUDShield()
+{
+	if (not IsValid(BlasterPlayerController))
+	{
+		BlasterPlayerController = Cast<ABlasterPlayerController>(GetController());
+	}
+
+	if (IsValid(BlasterPlayerController))
+	{
+		BlasterPlayerController->SetHUDShield(Health->GetShield(), Health->GetMaxShield());
 	}
 }
 

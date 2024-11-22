@@ -22,6 +22,7 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 
 	void SetHUDHealth(float Health, float MaxHealth);
+	void SetHUDShield(float Shield, float MaxShield);
 	void SetHUDScore(float Score);
 	void SetHUDDefeats(int32 Defeats);
 	void SetHUDWeaponAmmo(int32 Ammo);
@@ -67,6 +68,8 @@ private:
 
 	FText MakeTimeTextFromSeconds(float TimeSeconds) const;
 
+	void SetShieldVisibility(ESlateVisibility Visibility);
+
 private:
 	UFUNCTION()
 	void OnRep_MatchState();
@@ -98,6 +101,8 @@ private:
 private:
 	float SavedHealth;
 	float SavedMaxHealth;
+	float SavedShield;
+	float SavedMaxShield;
 	float SavedScoreAmount;
 	int32 SavedDefeats;
 };
