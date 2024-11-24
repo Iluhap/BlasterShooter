@@ -36,6 +36,7 @@ APickup::APickup()
 	PickupEffectComponent->SetupAttachment(RootComponent);
 
 	BaseTurnRate = 45.f;
+	BindOverlapDelay = 0.25f;
 }
 
 void APickup::BeginPlay()
@@ -44,7 +45,9 @@ void APickup::BeginPlay()
 
 	if (HasAuthority())
 	{
-		OverlapSphere->OnComponentBeginOverlap.AddDynamic(this, &APickup::OnSphereBeginOverlap);
+		GetWorld()->GetTimerManager().SetTimer(BindOverlapTimer,
+		                                       this, &APickup::BindOverlapTimerFinished,
+		                                       BindOverlapDelay);
 	}
 }
 
@@ -78,6 +81,14 @@ void APickup::Destroyed()
 			GetActorLocation(),
 			GetActorRotation()
 		);
+	}
+}
+
+void APickup::BindOverlapTimerFinished()
+{
+	if (HasAuthority())
+	{
+		OverlapSphere->OnComponentBeginOverlap.AddDynamic(this, &APickup::OnSphereBeginOverlap);
 	}
 }
 

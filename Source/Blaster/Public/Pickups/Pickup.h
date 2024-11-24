@@ -27,6 +27,9 @@ public:
 
 public:
 	virtual void Destroyed() override;
+
+private:
+	void BindOverlapTimerFinished();
 	
 private:
 	UPROPERTY(EditAnywhere)
@@ -46,4 +49,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float BaseTurnRate;
+
+	UPROPERTY(EditAnywhere)
+	float BindOverlapDelay;
+	
+	FTimerHandle BindOverlapTimer;
 };
