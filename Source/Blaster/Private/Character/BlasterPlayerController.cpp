@@ -37,6 +37,8 @@ ABlasterPlayerController::ABlasterPlayerController()
 	SavedMaxHealth = 0.f;
 	SavedScoreAmount = 0.f;
 	SavedDefeats = 0.f;
+	SavedShield = 0.f;
+	SavedMaxShield = 0.f;
 }
 
 void ABlasterPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -88,10 +90,19 @@ void ABlasterPlayerController::PollInit()
 		SetHUDScore(SavedScoreAmount);
 		SetHUDDefeats(SavedDefeats);
 
-		if (const auto* CombatComponent = GetPawn()->FindComponentByClass<UCombatComponent>();
-			IsValid(CombatComponent))
+		if (SavedCarriedAmmo.IsSet())
+			SetHUDCarriedAmmo(SavedCarriedAmmo.GetValue());
+
+		if (SavedWeaponAmmo.IsSet())
+			SetHUDWeaponAmmo(SavedWeaponAmmo.GetValue());
+
+		if (IsValid(GetPawn()))
 		{
-			SetHUDGrenades(CombatComponent->GetGrenades());
+			if (const auto* CombatComponent = GetPawn()->FindComponentByClass<UCombatComponent>();
+				IsValid(CombatComponent))
+			{
+				SetHUDGrenades(CombatComponent->GetGrenades());
+			}
 		}
 	}
 }
@@ -379,7 +390,10 @@ void ABlasterPlayerController::SetHUDWeaponAmmo(int32 Ammo)
 	SetHUD();
 
 	if (not IsHUDValid())
+	{
+		SavedWeaponAmmo = Ammo;
 		return;
+	}
 
 	if (IsValid(BlasterHUD->CharacterOverlay->WeaponAmmoAmount))
 	{
@@ -393,7 +407,10 @@ void ABlasterPlayerController::SetHUDCarriedAmmo(int32 Ammo)
 	SetHUD();
 
 	if (not IsHUDValid())
+	{
+		SavedCarriedAmmo = Ammo;
 		return;
+	}
 
 	if (IsValid(BlasterHUD->CharacterOverlay->ActiveCarriedAmmoAmount))
 	{

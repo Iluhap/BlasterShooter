@@ -105,4 +105,6 @@ private:
 	float SavedMaxShield;
 	float SavedScoreAmount;
 	int32 SavedDefeats;
+	TOptional<int32> SavedCarriedAmmo;
+	TOptional<int32> SavedWeaponAmmo;
 };

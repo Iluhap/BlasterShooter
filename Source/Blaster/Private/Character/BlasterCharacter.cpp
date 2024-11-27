@@ -119,6 +119,11 @@ void ABlasterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (IsValid(Combat))
+	{
+		Combat->SpawnDefaultWeapon();
+	}
+
 	UpdateHUDHealth();
 
 	if (HasAuthority())
@@ -448,30 +453,29 @@ void ABlasterCharacter::OnShieldUpdate(const float& NewShield, const float& NewM
 	UpdateHUDShield();
 }
 
+void ABlasterCharacter::SetController()
+{
+	BlasterPlayerController = Cast<ABlasterPlayerController>(GetController());
+}
+
 void ABlasterCharacter::UpdateHUDHealth()
 {
-	if (not IsValid(BlasterPlayerController))
-	{
-		BlasterPlayerController = Cast<ABlasterPlayerController>(GetController());
-	}
+	SetController();
 
-	if (IsValid(BlasterPlayerController))
-	{
-		BlasterPlayerController->SetHUDHealth(Health->GetHealth(), Health->GetMaxHealth());
-	}
+	if (not IsValid(BlasterPlayerController))
+		return;
+
+	BlasterPlayerController->SetHUDHealth(Health->GetHealth(), Health->GetMaxHealth());
 }
 
 void ABlasterCharacter::UpdateHUDShield()
 {
-	if (not IsValid(BlasterPlayerController))
-	{
-		BlasterPlayerController = Cast<ABlasterPlayerController>(GetController());
-	}
+	SetController();
 
-	if (IsValid(BlasterPlayerController))
-	{
-		BlasterPlayerController->SetHUDShield(Health->GetShield(), Health->GetMaxShield());
-	}
+	if (not IsValid(BlasterPlayerController))
+		return;
+
+	BlasterPlayerController->SetHUDShield(Health->GetShield(), Health->GetMaxShield());
 }
 
 void ABlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)

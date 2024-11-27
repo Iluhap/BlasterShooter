@@ -120,7 +120,7 @@ void AWeapon::SetState(const EWeaponState NewState)
 			ShowPickupWidget(false);
 			AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			SetMeshCollision(false);
-			
+
 			EnableCustomDepth(false);
 
 			break;
@@ -130,6 +130,9 @@ void AWeapon::SetState(const EWeaponState NewState)
 			if (HasAuthority())
 			{
 				AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+
+				if (bDestroyOnDrop)
+					Destroy();
 			}
 			SetMeshCollision(true);
 
@@ -139,6 +142,11 @@ void AWeapon::SetState(const EWeaponState NewState)
 		}
 	default: break;
 	}
+}
+
+void AWeapon::SetDestroyOnDrop(bool bDestroy)
+{
+	bDestroyOnDrop = bDestroy;
 }
 
 void AWeapon::Fire(const FVector& HitTarget)

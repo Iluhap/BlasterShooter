@@ -46,7 +46,10 @@ public:
 	                      int32 OtherBodyIndex);
 
 	void ShowPickupWidget(bool bShowWidget);
+
 	void SetState(const EWeaponState NewState);
+	void SetDestroyOnDrop(bool bDestroy);
+	
 	virtual void Fire(const FVector& HitTarget);
 	void Dropped();
 	void AddAmmo(int32 AmmoAmount);
@@ -153,4 +156,7 @@ private:
 
 	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_Ammo)
 	int32 MagazineCapacity;
+
+	UPROPERTY(EditAnywhere, Category=Properties)
+	bool bDestroyOnDrop;
 };

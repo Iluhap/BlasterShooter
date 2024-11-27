@@ -113,6 +113,7 @@ private:
 	void OnShieldUpdate(const float& NewShield, const float& NewMaxShield);
 
 	void UpdateHUDHealth();
+	void SetController();
 	void UpdateHUDShield();
 
 	UFUNCTION()

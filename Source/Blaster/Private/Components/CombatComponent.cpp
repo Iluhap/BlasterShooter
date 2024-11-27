@@ -11,6 +11,7 @@
 #include "Engine/GameViewportClient.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameMode/BlasterGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Weapon/Weapon.h"
 #include "Net/UnrealNetwork.h"
@@ -85,7 +86,8 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
 	DOREPLIFETIME(UCombatComponent, bAiming);
-	DOREPLIFETIME_CONDITION(UCombatComponent, ActiveCarriedAmmo, COND_OwnerOnly);
+	DOREPLIFETIME(UCombatComponent, ActiveCarriedAmmo);
+	// DOREPLIFETIME_CONDITION(UCombatComponent, ActiveCarriedAmmo, COND_OwnerOnly);
 	DOREPLIFETIME(UCombatComponent, CombatState);
 	DOREPLIFETIME(UCombatComponent, Grenades);
 }
@@ -159,6 +161,21 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
+}
+
+void UCombatComponent::SpawnDefaultWeapon()
+{
+	auto* BlasterGameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
+
+	if (not IsValid(BlasterGameMode)) // Default weapon should be spawned only at BlasterGameMode
+		return;
+
+	if (IsValid(DefaultWeaponClass))
+	{
+		auto* DefaultWeapon = GetWorld()->SpawnActor<AWeapon>(DefaultWeaponClass);
+		DefaultWeapon->SetDestroyOnDrop(true);
+		EquipWeapon(DefaultWeapon);
+	}
 }
 
 void UCombatComponent::DropEquippedWeapon()
@@ -263,7 +280,8 @@ int32 UCombatComponent::AmountToReload() const
 
 void UCombatComponent::UpdateAmmoValues()
 {
-	if (not IsValid(Character) or not IsValid(EquippedWeapon))
+	if (not IsValid(Character)
+		or not IsValid(EquippedWeapon))
 		return;
 
 	const int32 ReloadAmount = AmountToReload();
@@ -275,17 +293,15 @@ void UCombatComponent::UpdateAmmoValues()
 		ActiveCarriedAmmo = *CarriedAmmoPtr;
 	}
 
-	if (IsValid(Controller))
-	{
-		Controller->SetHUDCarriedAmmo(ActiveCarriedAmmo);
-	}
+	UpdateHUDActiveCarriedAmmo();
 
 	EquippedWeapon->AddAmmo(-ReloadAmount);
 }
 
 void UCombatComponent::UpdateShotgunAmmoValues()
 {
-	if (not IsValid(Character) or not IsValid(EquippedWeapon))
+	if (not IsValid(Character)
+		or not IsValid(EquippedWeapon))
 		return;
 
 	if (auto* CarriedAmmoPtr = CarriedAmmoMap.Find(EquippedWeapon->GetWeaponType());
@@ -295,13 +311,9 @@ void UCombatComponent::UpdateShotgunAmmoValues()
 		ActiveCarriedAmmo = *CarriedAmmoPtr;
 	}
 
-	if (IsValid(Controller))
-	{
-		Controller->SetHUDCarriedAmmo(ActiveCarriedAmmo);
-	}
+	UpdateHUDActiveCarriedAmmo();
 
 	EquippedWeapon->AddAmmo(-1);
-
 	bCanFire = true;
 
 	if (EquippedWeapon->IsFull() or ActiveCarriedAmmo == 0)
@@ -749,13 +761,22 @@ void UCombatComponent::UpdateActiveCarriedAmmo()
 	{
 		ActiveCarriedAmmo = *AmmoAmount;
 
-		Controller = Cast<ABlasterPlayerController>(Character->GetController());
-
-		if (IsValid(Controller))
-		{
-			Controller->SetHUDCarriedAmmo(ActiveCarriedAmmo);
-		}
+		UpdateHUDActiveCarriedAmmo();
 	}
+}
+
+void UCombatComponent::UpdateHUDActiveCarriedAmmo()
+{
+	Character = Cast<ABlasterCharacter>(GetOwner());
+	if (not IsValid(Character))
+		return;
+
+	Controller = Cast<ABlasterPlayerController>(Character->GetController());
+
+	if (not IsValid(Controller))
+		return;
+
+	Controller->SetHUDCarriedAmmo(ActiveCarriedAmmo);
 }
 
 void UCombatComponent::UpdateHUDGrenades()
@@ -765,18 +786,15 @@ void UCombatComponent::UpdateHUDGrenades()
 
 	Controller = Cast<ABlasterPlayerController>(Character->GetController());
 
-	if (IsValid(Controller))
-	{
-		Controller->SetHUDGrenades(Grenades);
-	}
+	if (not IsValid(Controller))
+		return;
+
+	Controller->SetHUDGrenades(Grenades);
 }
 
 void UCombatComponent::OnRep_ActiveCarriedAmmo()
 {
-	if (IsValid(Controller))
-	{
-		Controller->SetHUDCarriedAmmo(ActiveCarriedAmmo);
-	}
+	UpdateHUDActiveCarriedAmmo();
 
 	const bool bJumpToShotgunEnd =
 		CombatState == ECombatState::ECS_Reloading

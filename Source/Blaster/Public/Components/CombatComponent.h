@@ -27,7 +27,9 @@ protected:
 public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
+
 	void EquipWeapon(class AWeapon* WeaponToEquip);
+	void SpawnDefaultWeapon();
 
 	void Reload();
 
@@ -53,8 +55,6 @@ public:
 	void LaunchGrenade();
 
 	void PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount);
-
-	void Heal(int32 HealthAmount);
 
 public: // Getters
 	bool IsWeaponEquipped() const;
@@ -110,6 +110,7 @@ private:
 
 	void InitializeCarriedAmmo();
 	void UpdateActiveCarriedAmmo();
+	void UpdateHUDActiveCarriedAmmo();
 	void UpdateHUDGrenades();
 
 	void HandleReload();
@@ -155,6 +156,9 @@ private:
 
 	UPROPERTY(ReplicatedUsing=OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWeapon> DefaultWeaponClass;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AProjectile> GrenadeClass;
