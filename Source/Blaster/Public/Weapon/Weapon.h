@@ -87,6 +87,7 @@ private:
 	void OnRep_Ammo();
 
 private:
+	void SetOwningCharacter();
 	void SetOwningController();
 
 public:

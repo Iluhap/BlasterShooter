@@ -121,8 +121,6 @@ void AWeapon::SetState(const EWeaponState NewState)
 			AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			SetMeshCollision(false);
 
-			EnableCustomDepth(false);
-
 			break;
 		}
 	case EWeaponState::EWS_Dropped:
@@ -290,11 +288,16 @@ bool AWeapon::IsFull() const
 	return Ammo == MagazineCapacity;
 }
 
-void AWeapon::SetOwningController()
+void AWeapon::SetOwningCharacter()
 {
 	OwningBlasterCharacter = not IsValid(OwningBlasterCharacter)
 		                         ? Cast<ABlasterCharacter>(GetOwner())
 		                         : OwningBlasterCharacter;
+}
+
+void AWeapon::SetOwningController()
+{
+	SetOwningCharacter();
 
 	if (not IsValid(OwningBlasterCharacter))
 		return;

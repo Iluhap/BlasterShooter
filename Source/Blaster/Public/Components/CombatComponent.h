@@ -29,6 +29,7 @@ public:
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
 	void EquipWeapon(class AWeapon* WeaponToEquip);
+
 	void SpawnDefaultWeapon();
 
 	void Reload();
@@ -121,7 +122,7 @@ private:
 
 	void UpdateShotgunAmmoValues();
 
-	void PlayEquipSound() const;
+	void PlayEquipSound(const AWeapon* Weapon) const;
 
 	void DropEquippedWeapon();
 
@@ -131,9 +132,15 @@ private:
 
 	void ShowAttachedGrenade(bool bVisible);
 
+	void EquipPrimaryWeapon(AWeapon* WeaponToEquip);
+	void EquipSecondaryWeapon(AWeapon* WeaponToEquip);
+
 private:
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
+
+	UFUNCTION()
+	void OnRep_SecondaryWeapon();
 
 	UFUNCTION()
 	void OnRep_ActiveCarriedAmmo();
@@ -156,6 +163,9 @@ private:
 
 	UPROPERTY(ReplicatedUsing=OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
+
+	UPROPERTY(ReplicatedUsing=OnRep_SecondaryWeapon)
+	AWeapon* SecondaryWeapon;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeapon> DefaultWeaponClass;
@@ -206,6 +216,9 @@ private:
 	UPROPERTY(EditAnywhere)
 	FName LeftHandSocket;
 
+	UPROPERTY(EditAnywhere)
+	FName SecondaryWeaponSocket;
+	
 	UPROPERTY(EditAnywhere)
 	float BaseWalkSpeed;
 
