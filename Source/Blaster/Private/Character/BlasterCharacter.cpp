@@ -100,6 +100,8 @@ void ABlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	Input->BindAction(ReloadAction, ETriggerEvent::Completed, this, &ABlasterCharacter::Reload);
 
 	Input->BindAction(ThrowGrenadeAction, ETriggerEvent::Started, this, &ABlasterCharacter::ThrowGrenade);
+
+	Input->BindAction(SwapWeaponsAction, ETriggerEvent::Completed, this, &ABlasterCharacter::SwapWeapons);
 }
 
 void ABlasterCharacter::DisableGameplay()
@@ -295,7 +297,7 @@ void ABlasterCharacter::Eliminate()
 {
 	if (IsValid(Combat) and Combat->IsWeaponEquipped())
 	{
-		Combat->GetEquippedWeapon()->Dropped();
+		Combat->DropWeapons();
 	}
 
 	MulticastEliminate();
@@ -549,18 +551,7 @@ void ABlasterCharacter::Equip()
 	if (bDisableGameplay)
 		return;
 
-	if (IsValid(Combat))
-	{
-		if (HasAuthority())
-		{
-			Combat->EquipWeapon(OverlappingWeapon);
-		}
-		else
-		{
-			ServerEquip();
-			Combat->EquipWeapon(OverlappingWeapon);
-		}
-	}
+	ServerEquip();
 }
 
 void ABlasterCharacter::ServerEquip_Implementation()
@@ -646,6 +637,19 @@ void ABlasterCharacter::ThrowGrenade()
 	if (IsValid(Combat))
 	{
 		Combat->ThrowGrenade();
+	}
+}
+
+void ABlasterCharacter::SwapWeapons()
+{
+	ServerSwapWeapons();
+}
+
+void ABlasterCharacter::ServerSwapWeapons_Implementation()
+{
+	if (IsValid(Combat))
+	{
+		Combat->SwapWeapons();
 	}
 }
 

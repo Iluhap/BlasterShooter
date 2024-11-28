@@ -28,7 +28,7 @@ AWeapon::AWeapon()
 	Mesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	SetMeshOutlineColor(CUSTOM_DEPTH_PURPLE);
+	SetMeshOutlineColor(CUSTOM_DEPTH_BLUE);
 	EnableCustomDepth(true);
 
 	AreaSphere = CreateDefaultSubobject<USphereComponent>("Area Sphere");
@@ -113,33 +113,62 @@ void AWeapon::SetState(const EWeaponState NewState)
 {
 	State = NewState;
 
+	OnWeaponStateSet();
+}
+
+void AWeapon::OnWeaponStateSet()
+{
 	switch (State)
 	{
 	case EWeaponState::EWS_Equipped:
 		{
-			ShowPickupWidget(false);
-			AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			SetMeshCollision(false);
-
+			OnEquipped();
+			break;
+		}
+	case EWeaponState::EWS_Equipped_Secondary:
+		{
+			OnEquippedSecondary();
 			break;
 		}
 	case EWeaponState::EWS_Dropped:
 		{
-			if (HasAuthority())
-			{
-				AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-
-				if (bDestroyOnDrop)
-					Destroy();
-			}
-			SetMeshCollision(true);
-
-			SetMeshOutlineColor(CUSTOM_DEPTH_BLUE);
-			EnableCustomDepth(true);
+			OnDropped();
 			break;
 		}
 	default: break;
 	}
+}
+
+void AWeapon::OnEquipped()
+{
+	ShowPickupWidget(false);
+	AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	SetMeshCollision(false);
+	EnableCustomDepth(false);
+}
+
+void AWeapon::OnEquippedSecondary()
+{
+	ShowPickupWidget(false);
+	AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	SetMeshCollision(false);
+	EnableCustomDepth(true);
+	SetMeshOutlineColor(CUSTOM_DEPTH_TAN);
+}
+
+void AWeapon::OnDropped()
+{
+	if (HasAuthority())
+	{
+		AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+
+		if (bDestroyOnDrop)
+			Destroy();
+	}
+	SetMeshCollision(true);
+
+	SetMeshOutlineColor(CUSTOM_DEPTH_BLUE);
+	EnableCustomDepth(true);
 }
 
 void AWeapon::SetDestroyOnDrop(bool bDestroy)
@@ -309,19 +338,5 @@ void AWeapon::SetOwningController()
 
 void AWeapon::OnRep_State()
 {
-	switch (State)
-	{
-	case EWeaponState::EWS_Equipped:
-		{
-			ShowPickupWidget(false);
-			SetMeshCollision(false);
-			break;
-		}
-	case EWeaponState::EWS_Dropped:
-		{
-			SetMeshCollision(true);
-			break;
-		}
-	default: break;
-	}
+	OnWeaponStateSet();
 }

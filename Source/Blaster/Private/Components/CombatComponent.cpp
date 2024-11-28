@@ -19,6 +19,7 @@
 #include "Weapon/WeaponTypes.h"
 #include "Sound/SoundCue.h"
 #include "Weapon/Projectile.h"
+#include "Windows/WindowsApplication.h"
 
 
 UCombatComponent::UCombatComponent()
@@ -159,12 +160,32 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	}
 }
 
+void UCombatComponent::SwapWeapons()
+{
+	if (not ShouldSwapWeapons())
+		return;
+
+	std::swap(EquippedWeapon, SecondaryWeapon);
+
+	EquippedWeapon->SetState(EWeaponState::EWS_Equipped);
+	AttachActorToSocket(EquippedWeapon, RightHandSocket);
+	EquippedWeapon->SetOwner(Character);
+	EquippedWeapon->UpdateHUDAmmo();
+	UpdateActiveCarriedAmmo();
+	PlayEquipSound(EquippedWeapon);
+	ReloadEmptyWeapon();
+
+	SecondaryWeapon->SetState(EWeaponState::EWS_Equipped_Secondary);
+	AttachActorToSocket(SecondaryWeapon, SecondaryWeaponSocket);
+	SecondaryWeapon->SetOwner(Character);
+}
+
 void UCombatComponent::EquipPrimaryWeapon(AWeapon* WeaponToEquip)
 {
 	if (not IsValid(WeaponToEquip))
 		return;
 
-	DropEquippedWeapon();
+	DropWeapon(EquippedWeapon);
 
 	EquippedWeapon = WeaponToEquip;
 	EquippedWeapon->SetState(EWeaponState::EWS_Equipped);
@@ -177,8 +198,6 @@ void UCombatComponent::EquipPrimaryWeapon(AWeapon* WeaponToEquip)
 	UpdateActiveCarriedAmmo();
 	PlayEquipSound(WeaponToEquip);
 	ReloadEmptyWeapon();
-
-	EquippedWeapon->EnableCustomDepth(false);
 }
 
 void UCombatComponent::EquipSecondaryWeapon(AWeapon* WeaponToEquip)
@@ -187,13 +206,11 @@ void UCombatComponent::EquipSecondaryWeapon(AWeapon* WeaponToEquip)
 		return;
 
 	SecondaryWeapon = WeaponToEquip;
-	SecondaryWeapon->SetState(EWeaponState::EWS_Equipped);
+	SecondaryWeapon->SetState(EWeaponState::EWS_Equipped_Secondary);
 
 	AttachActorToSocket(SecondaryWeapon, SecondaryWeaponSocket);
 	SecondaryWeapon->SetOwner(Character);
 	PlayEquipSound(WeaponToEquip);
-
-	SecondaryWeapon->SetMeshOutlineColor(CUSTOM_DEPTH_TAN);
 }
 
 void UCombatComponent::SpawnDefaultWeapon()
@@ -211,11 +228,17 @@ void UCombatComponent::SpawnDefaultWeapon()
 	}
 }
 
-void UCombatComponent::DropEquippedWeapon()
+void UCombatComponent::DropWeapons()
 {
-	if (IsValid(EquippedWeapon))
+	DropWeapon(EquippedWeapon);
+	DropWeapon(SecondaryWeapon);
+}
+
+void UCombatComponent::DropWeapon(AWeapon* Weapon)
+{
+	if (IsValid(Weapon))
 	{
-		EquippedWeapon->Dropped();
+		Weapon->Dropped();
 	}
 }
 
@@ -228,7 +251,6 @@ void UCombatComponent::AttachActorToSocket(AActor* Actor, const FName& AttachSoc
 	if (auto* Socket = Character->GetMesh()->GetSocketByName(AttachSocketName);
 		IsValid(Socket))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s"), *Socket->GetName())
 		Socket->AttachActor(Actor, Character->GetMesh());
 	}
 }
@@ -885,12 +907,10 @@ void UCombatComponent::OnRep_EquippedWeapon()
 	if (IsValid(EquippedWeapon))
 	{
 		EquippedWeapon->SetState(EWeaponState::EWS_Equipped);
-
 		AttachActorToSocket(EquippedWeapon, RightHandSocket);
-
 		PlayEquipSound(EquippedWeapon);
-
 		EquippedWeapon->EnableCustomDepth(false);
+		EquippedWeapon->UpdateHUDAmmo();
 
 		if (IsValid(Character))
 		{
@@ -904,7 +924,7 @@ void UCombatComponent::OnRep_SecondaryWeapon()
 {
 	if (IsValid(SecondaryWeapon))
 	{
-		SecondaryWeapon->SetState(EWeaponState::EWS_Equipped);
+		SecondaryWeapon->SetState(EWeaponState::EWS_Equipped_Secondary);
 
 		AttachActorToSocket(SecondaryWeapon, SecondaryWeaponSocket);
 
@@ -925,4 +945,9 @@ bool UCombatComponent::IsAiming() const
 bool UCombatComponent::IsFiring() const
 {
 	return bFiring;
+}
+
+bool UCombatComponent::ShouldSwapWeapons() const
+{
+	return IsValid(EquippedWeapon) and IsValid(SecondaryWeapon);
 }

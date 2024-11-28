@@ -82,8 +82,13 @@ private:
 	void Reload();
 	void ThrowGrenade();
 
+	void SwapWeapons();
+
 	UFUNCTION(Server, Reliable)
 	void ServerEquip();
+
+	UFUNCTION(Server, Reliable)
+	void ServerSwapWeapons();
 
 private:
 	void TurnInPlace(float DeltaTime);
@@ -256,4 +261,7 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> ThrowGrenadeAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> SwapWeaponsAction;
 };

@@ -29,8 +29,11 @@ public:
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
 	void EquipWeapon(class AWeapon* WeaponToEquip);
+	void SwapWeapons();
 
 	void SpawnDefaultWeapon();
+
+	void DropWeapons();
 
 	void Reload();
 
@@ -66,6 +69,8 @@ public: // Getters
 	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
 	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
 	FORCEINLINE int32 GetGrenades() const { return Grenades; }
+
+	bool ShouldSwapWeapons() const;
 
 private:
 	UFUNCTION(Server, Reliable)
@@ -124,7 +129,7 @@ private:
 
 	void PlayEquipSound(const AWeapon* Weapon) const;
 
-	void DropEquippedWeapon();
+	void DropWeapon(AWeapon* Weapon);
 
 	void AttachActorToSocket(AActor* Actor, const FName& AttachSocketName);
 
