@@ -44,4 +44,10 @@ public:
 
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UTextBlock> GrenadesText;
+
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<class UImage> HighPingImage;
+
+	UPROPERTY(meta=(BindWidgetAnim), Transient)
+	TObjectPtr<UWidgetAnimation> HighPingAnimation;
 };

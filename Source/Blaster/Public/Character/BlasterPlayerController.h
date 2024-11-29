@@ -61,6 +61,9 @@ protected:
 	void HandleMatchStarting();
 	void HandleCooldown();
 
+	void ShowHighPingWarning();
+	void HideHighPingWarning();
+
 private:
 	void SetHUD();
 	bool IsHUDValid() const;
@@ -69,6 +72,8 @@ private:
 	FText MakeTimeTextFromSeconds(float TimeSeconds) const;
 
 	void SetShieldVisibility(ESlateVisibility Visibility);
+	
+	void CheckPing();
 
 private:
 	UFUNCTION()
@@ -97,6 +102,18 @@ private:
 	float TimeSyncFrequency;
 
 	float TimeSyncRunningTime;
+
+	UPROPERTY(EditAnywhere)
+	float HighPingWarningDuration;
+
+	UPROPERTY(EditAnywhere)
+	float CheckPingRate;
+
+	UPROPERTY(EditAnywhere)
+	float HighPingThreshold;
+
+	FTimerHandle PingCheckTimerHandle;
+	FTimerHandle HighPingWarningTimerHandle;
 
 private:
 	float SavedHealth;

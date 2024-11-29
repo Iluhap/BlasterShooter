@@ -7,6 +7,8 @@
 #include "Character/BlasterCharacter.h"
 #include "Components/CombatComponent.h"
 #include "Components/HealthComponent.h"
+#include "Components/Image.h"
+#include "Animation/WidgetAnimation.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "GameFramework/GameMode.h"
@@ -32,6 +34,10 @@ ABlasterPlayerController::ABlasterPlayerController()
 	ClientServerDelta = 0.f;
 	TimeSyncFrequency = 5.f;
 	TimeSyncRunningTime = 0.f;
+
+	HighPingWarningDuration = 6.f;
+	CheckPingRate = 10.f;
+	HighPingThreshold = 70.f;
 
 	SavedHealth = 0.f;
 	SavedMaxHealth = 0.f;
@@ -63,6 +69,10 @@ void ABlasterPlayerController::BeginPlay()
 	SetHUD();
 
 	ServerCheckMatchState();
+
+	GetWorld()->GetTimerManager().SetTimer(PingCheckTimerHandle,
+	                                       this, &ABlasterPlayerController::CheckPing,
+	                                       CheckPingRate, true, 1.f);
 }
 
 void ABlasterPlayerController::OnPossess(APawn* PawnToPossess)
@@ -125,7 +135,6 @@ void ABlasterPlayerController::CheckTimeSync(float DeltaSeconds)
 		TimeSyncRunningTime = 0.f;
 	}
 }
-
 
 float ABlasterPlayerController::GetServerTime()
 {
@@ -236,6 +245,56 @@ void ABlasterPlayerController::HandleCooldown()
 		IsValid(BlasterCharacter))
 	{
 		BlasterCharacter->DisableGameplay();
+	}
+}
+
+void ABlasterPlayerController::CheckPing()
+{
+	if (IsValid(PlayerState))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Ping: %f"), PlayerState->GetPingInMilliseconds());
+		if (PlayerState->GetPingInMilliseconds() > HighPingThreshold)
+		{
+			ShowHighPingWarning();
+		}
+		else
+		{
+			HideHighPingWarning();
+		}
+	}
+}
+
+void ABlasterPlayerController::ShowHighPingWarning()
+{
+	SetHUD();
+
+	if (IsHUDValid()
+		and IsValid(BlasterHUD->CharacterOverlay->HighPingImage)
+		and IsValid(BlasterHUD->CharacterOverlay->HighPingAnimation))
+	{
+		BlasterHUD->CharacterOverlay->HighPingImage->SetVisibility(ESlateVisibility::Visible);
+		BlasterHUD->CharacterOverlay->PlayAnimation(BlasterHUD->CharacterOverlay->HighPingAnimation,
+		                                            0.f, 6);
+
+		GetWorld()->GetTimerManager().SetTimer(HighPingWarningTimerHandle,
+		                                       this, &ABlasterPlayerController::HideHighPingWarning,
+		                                       HighPingWarningDuration);
+	}
+}
+
+void ABlasterPlayerController::HideHighPingWarning()
+{
+	SetHUD();
+
+	if (IsHUDValid()
+		and IsValid(BlasterHUD->CharacterOverlay->HighPingImage)
+		and IsValid(BlasterHUD->CharacterOverlay->HighPingAnimation))
+	{
+		BlasterHUD->CharacterOverlay->HighPingImage->SetVisibility(ESlateVisibility::Hidden);
+		if (BlasterHUD->CharacterOverlay->IsAnimationPlaying(BlasterHUD->CharacterOverlay->HighPingAnimation))
+		{
+			BlasterHUD->CharacterOverlay->StopAnimation(BlasterHUD->CharacterOverlay->HighPingAnimation);
+		}
 	}
 }
 
