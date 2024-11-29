@@ -29,6 +29,7 @@ UCombatComponent::UCombatComponent()
 	Controller = nullptr;
 	HUD = nullptr;
 	EquippedWeapon = nullptr;
+	SecondaryWeapon = nullptr;
 	bAiming = false;
 	bFiring = false;
 
@@ -422,11 +423,35 @@ void UCombatComponent::Fire()
 	{
 		bCanFire = false;
 
+		LocalFire(HitTargetLocation);
 		ServerFire(HitTargetLocation);
 
 		CrosshairShootingFactor = FMath::Min(CrosshairShootingFactor + CrosshairShootingFactorStep,
 		                                     CrosshairShootingFactorMax);
 		StartFireTimer();
+	}
+}
+
+void UCombatComponent::LocalFire(const FVector_NetQuantize& HitTarget)
+{
+	if (not IsValid(EquippedWeapon))
+		return;
+
+	if (IsValid(Character)
+		and CombatState == ECombatState::ECS_Reloading
+		and EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun)
+	{
+		Character->PlayFireMontage(bAiming);
+		EquippedWeapon->Fire(HitTarget);
+		CombatState = ECombatState::ECS_Unoccupied;
+		return;
+	}
+
+	if (IsValid(Character) and CombatState == ECombatState::ECS_Unoccupied)
+	{
+		Character->PlayFireMontage(bAiming);
+
+		EquippedWeapon->Fire(HitTarget);
 	}
 }
 
@@ -491,25 +516,10 @@ void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& HitT
 
 void UCombatComponent::NetMulticastFire_Implementation(const FVector_NetQuantize& HitTarget)
 {
-	if (not IsValid(EquippedWeapon))
+	if (IsValid(Character) and Character->IsLocallyControlled())
 		return;
 
-	if (IsValid(Character)
-		and CombatState == ECombatState::ECS_Reloading
-		and EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun)
-	{
-		Character->PlayFireMontage(bAiming);
-		EquippedWeapon->Fire(HitTarget);
-		CombatState = ECombatState::ECS_Unoccupied;
-		return;
-	}
-
-	if (IsValid(Character) and CombatState == ECombatState::ECS_Unoccupied)
-	{
-		Character->PlayFireMontage(bAiming);
-
-		EquippedWeapon->Fire(HitTarget);
-	}
+	LocalFire(HitTarget);
 }
 
 void UCombatComponent::TraceUnderCrosshair(FHitResult& HitResult)
@@ -949,5 +959,6 @@ bool UCombatComponent::IsFiring() const
 
 bool UCombatComponent::ShouldSwapWeapons() const
 {
-	return IsValid(EquippedWeapon) and IsValid(SecondaryWeapon);
+	return IsValid(EquippedWeapon) and IsValid(SecondaryWeapon)
+		and CombatState == ECombatState::ECS_Unoccupied;
 }

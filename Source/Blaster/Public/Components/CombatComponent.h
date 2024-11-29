@@ -109,6 +109,8 @@ private:
 	void InterpFOV(float DeltaTime);
 
 	void Fire();
+	void LocalFire(const FVector_NetQuantize& HitTarget);
+
 	void StartFireTimer();
 	void FireTimerFinished();
 
@@ -223,7 +225,7 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	FName SecondaryWeaponSocket;
-	
+
 	UPROPERTY(EditAnywhere)
 	float BaseWalkSpeed;
 
