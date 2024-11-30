@@ -37,13 +37,13 @@ public:
 
 	void Reload();
 
-	UFUNCTION(BlueprintCallable)
-	void FinishReloading();
-
 	void SetAiming(bool bIsAiming);
 	void SetFiring(bool bIsFiring);
 
 	void TraceUnderCrosshair(FHitResult& HitResult);
+
+	UFUNCTION(BlueprintCallable)
+	void FinishReloading();
 
 	UFUNCTION(BlueprintCallable)
 	void ShotgunShellReload();
@@ -78,12 +78,6 @@ private:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastSetAiming(bool bIsAiming);
-
-	UFUNCTION(Server, Reliable)
-	void ServerFire(const FVector_NetQuantize& HitTarget);
-
-	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastFire(const FVector_NetQuantize& HitTarget);
 
 	UFUNCTION(Server, Reliable)
 	void ServerReload();
@@ -142,6 +136,13 @@ private:
 	void EquipPrimaryWeapon(AWeapon* WeaponToEquip);
 	void EquipSecondaryWeapon(AWeapon* WeaponToEquip);
 
+private:
+	UFUNCTION(Server, Reliable)
+	void ServerPlayFireMontage();
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastPlayFireMontage();
+	
 private:
 	UFUNCTION()
 	void OnRep_EquippedWeapon();

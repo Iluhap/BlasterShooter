@@ -19,6 +19,15 @@ enum class EWeaponState : uint8
 	EWS_MAX UMETA(DisplayName = "DefaultMAX"),
 };
 
+UENUM(BlueprintType)
+enum class EFireType : uint8
+{
+	EFT_HitScan UMETA(DisplayName = "HitScan Weapon"),
+	EFT_Projectile UMETA(DisplayName = "Projectile Weapon"),
+	EFT_Shotgun UMETA(DisplayName = "Shotgun Weapon"),
+
+	EFT_MAX UMETA(DisplayName = "Default MAX")
+};
 
 UCLASS()
 class BLASTER_API AWeapon : public AActor
@@ -35,7 +44,6 @@ protected:
 	virtual void OnEquipped();
 	virtual void OnEquippedSecondary();
 	virtual void OnDropped();
-
 
 public:
 	virtual void Tick(float DeltaTime) override;
@@ -69,6 +77,7 @@ public:
 public:
 	bool IsEmpty() const;
 	bool IsFull() const;
+	TOptional<FTransform> GetMuzzleTransform() const;
 
 public:
 	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; };
@@ -76,17 +85,29 @@ public:
 	FORCEINLINE float GetFireRate() const { return FireRate; };
 	FORCEINLINE float IsAutomatic() const { return bAutomatic; };
 	FORCEINLINE EWeaponType GetWeaponType() const { return Type; };
+	FORCEINLINE EFireType GetFireType() const { return FireType; };
 	FORCEINLINE int32 GetAmmo() const { return Ammo; };
 	FORCEINLINE int32 GetMagazineCapacity() const { return MagazineCapacity; };
+
+protected:
+	UFUNCTION(Server, Reliable)
+	virtual void ServerFire(const FVector_NetQuantize& Start, const FVector_NetQuantize& HitTarget);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	virtual void NetMulticastFire(const FVector_NetQuantize& HitTarget);
+
+protected:
+	void PlayFireAnimation() const;
+	void EjectCasing() const;
+
+	virtual FVector ApplyScatterTo(const FVector& TraceStart, const FVector& HitTarget) const;
+
+	void SpendRound();
 
 protected:
 	virtual void OnRep_Owner() override;
 
 private:
-	void SetMeshCollision(bool bEnable);
-
-	void SpendRound();
-
 	UFUNCTION()
 	void OnRep_State();
 
@@ -94,8 +115,11 @@ private:
 	void OnRep_Ammo();
 
 private:
+	void SetMeshCollision(bool bEnable);
 	void SetOwningCharacter();
 	void SetOwningController();
+
+	void OnFireEffects() const;
 
 public:
 	UPROPERTY(EditAnywhere)
@@ -119,6 +143,25 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category= "Weapon Properties")
 	TSubclassOf<class AAmmoCasing> AmmoCasingClass;
+
+	UPROPERTY(EditAnywhere, Category= "Weapon Properties")
+	FName AmmoEjectSocketName;
+
+	UPROPERTY(EditAnywhere, Category= "Weapon Properties")
+	FName MuzzleFlashSocketName;
+
+	/*
+	* Trace with scatter
+	*/
+
+	UPROPERTY(EditAnywhere, Category="Weapon Scatter")
+	float DistanceToSphere;
+
+	UPROPERTY(EditAnywhere, Category="Weapon Scatter")
+	float SphereRadius;
+
+	UPROPERTY(EditAnywhere, Category="Weapon Scatter")
+	bool bUseScatter;
 
 public:
 	UPROPERTY(EditAnywhere, Category=Crosshair)
@@ -146,6 +189,9 @@ private:
 private:
 	UPROPERTY(EditAnywhere)
 	EWeaponType Type;
+
+	UPROPERTY(EditAnywhere)
+	EFireType FireType;
 
 	UPROPERTY(EditAnywhere)
 	float ZoomedFOV = 30.f;

@@ -279,6 +279,7 @@ void UCombatComponent::ShowAttachedGrenade(bool bShow)
 void UCombatComponent::Reload()
 {
 	if (ActiveCarriedAmmo > 0
+		and IsValid(EquippedWeapon) and not EquippedWeapon->IsFull()
 		and CombatState == ECombatState::ECS_Unoccupied)
 	{
 		ServerReload();
@@ -351,7 +352,7 @@ void UCombatComponent::UpdateAmmoValues()
 
 	UpdateHUDActiveCarriedAmmo();
 
-	EquippedWeapon->AddAmmo(-ReloadAmount);
+	EquippedWeapon->AddAmmo(ReloadAmount);
 }
 
 void UCombatComponent::UpdateShotgunAmmoValues()
@@ -369,7 +370,7 @@ void UCombatComponent::UpdateShotgunAmmoValues()
 
 	UpdateHUDActiveCarriedAmmo();
 
-	EquippedWeapon->AddAmmo(-1);
+	EquippedWeapon->AddAmmo(1);
 	bCanFire = true;
 
 	if (EquippedWeapon->IsFull() or ActiveCarriedAmmo == 0)
@@ -424,7 +425,6 @@ void UCombatComponent::Fire()
 		bCanFire = false;
 
 		LocalFire(HitTargetLocation);
-		ServerFire(HitTargetLocation);
 
 		CrosshairShootingFactor = FMath::Min(CrosshairShootingFactor + CrosshairShootingFactorStep,
 		                                     CrosshairShootingFactorMax);
@@ -437,22 +437,34 @@ void UCombatComponent::LocalFire(const FVector_NetQuantize& HitTarget)
 	if (not IsValid(EquippedWeapon))
 		return;
 
-	if (IsValid(Character)
-		and CombatState == ECombatState::ECS_Reloading
-		and EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun)
+	const bool bUnoccupied = CombatState == ECombatState::ECS_Unoccupied;
+	const bool bReloadingShotgun =
+		CombatState == ECombatState::ECS_Reloading and EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun;
+
+	if (IsValid(Character) and (bUnoccupied or bReloadingShotgun))
 	{
 		Character->PlayFireMontage(bAiming);
+		ServerPlayFireMontage();
 		EquippedWeapon->Fire(HitTarget);
-		CombatState = ECombatState::ECS_Unoccupied;
+
+		if (bReloadingShotgun)
+		{
+			CombatState = ECombatState::ECS_Unoccupied;
+		}
+	}
+}
+
+void UCombatComponent::ServerPlayFireMontage_Implementation()
+{
+	NetMulticastPlayFireMontage();
+}
+
+void UCombatComponent::NetMulticastPlayFireMontage_Implementation()
+{
+	if (IsValid(Character) and Character->IsLocallyControlled())
 		return;
-	}
 
-	if (IsValid(Character) and CombatState == ECombatState::ECS_Unoccupied)
-	{
-		Character->PlayFireMontage(bAiming);
-
-		EquippedWeapon->Fire(HitTarget);
-	}
+	Character->PlayFireMontage(bAiming);
 }
 
 void UCombatComponent::StartFireTimer()
@@ -507,19 +519,6 @@ void UCombatComponent::SetFiring(bool bIsFiring)
 	{
 		Fire();
 	}
-}
-
-void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& HitTarget)
-{
-	NetMulticastFire(HitTarget);
-}
-
-void UCombatComponent::NetMulticastFire_Implementation(const FVector_NetQuantize& HitTarget)
-{
-	if (IsValid(Character) and Character->IsLocallyControlled())
-		return;
-
-	LocalFire(HitTarget);
 }
 
 void UCombatComponent::TraceUnderCrosshair(FHitResult& HitResult)

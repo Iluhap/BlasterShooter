@@ -1,34 +1,9 @@
 ﻿#include "Weapon/Shotgun.h"
 
-#include "Engine/SkeletalMeshSocket.h"
-
 
 AShotgun::AShotgun()
 {
 	PrimaryActorTick.bCanEverTick = true;
-}
-
-void AShotgun::Fire(const FVector& HitTarget)
-{
-	AWeapon::Fire(HitTarget);
-
-	if (auto* MuzzleFlashSocket = Mesh->GetSocketByName("MuzzleFlash");
-		IsValid(MuzzleFlashSocket))
-	{
-		const FTransform MuzzleTransform = MuzzleFlashSocket->GetSocketTransform(Mesh);
-		const FVector Start = MuzzleTransform.GetLocation();
-
-		for (int32 i = 0; i < NumberOfPellets; i++)
-		{
-			if (FHitResult HitResult;
-				TraceHit(Start, HitTarget, HitResult))
-			{
-				ApplyDamage(HitResult.GetActor());
-				SpawnImpactParticles(HitResult);
-				SpawnHitSound(HitResult.ImpactPoint);
-			}
-		}
-	}
 }
 
 void AShotgun::BeginPlay()
@@ -39,4 +14,37 @@ void AShotgun::BeginPlay()
 void AShotgun::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+void AShotgun::Fire(const FVector& HitTarget)
+{
+	if (const auto MuzzleTransform = GetMuzzleTransform();
+		MuzzleTransform.IsSet())
+	{
+		ServerFire(MuzzleTransform->GetLocation(), HitTarget);
+	}
+}
+
+void AShotgun::ServerFire_Implementation(const FVector_NetQuantize& Start, const FVector_NetQuantize& HitTarget)
+{
+	SpendRound();
+
+	for (int32 i = 0; i < NumberOfPellets; i++)
+	{
+		const FVector End = ApplyScatterTo(Start, HitTarget);
+		if (const auto HitResult = PerformHitScan(Start, End);
+			HitResult.IsSet())
+		{
+			NetMulticastSpawnImpactEffects(HitResult.GetValue());
+		}
+		else
+		{
+			NetMulticastFire(End);
+		}
+	}
+}
+
+void AShotgun::NetMulticastFire_Implementation(const FVector_NetQuantize& HitTarget)
+{
+	Super::NetMulticastFire_Implementation(HitTarget);
 }

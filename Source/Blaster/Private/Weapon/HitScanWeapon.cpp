@@ -3,6 +3,7 @@
 
 #include "Weapon/HitScanWeapon.h"
 
+#include "ParticleHelper.h"
 #include "Character/BlasterCharacter.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
@@ -16,83 +17,54 @@ AHitScanWeapon::AHitScanWeapon()
 
 	DistanceToSphere = 800.f;
 	SphereRadius = 75.f;
-	bUserScatter = true;
+	bUseScatter = true;
 }
 
 void AHitScanWeapon::Fire(const FVector& HitTarget)
 {
 	Super::Fire(HitTarget);
-
-	if (auto* MuzzleFlashSocket = Mesh->GetSocketByName("MuzzleFlash");
-		IsValid(MuzzleFlashSocket))
-	{
-		const FTransform MuzzleTransform = MuzzleFlashSocket->GetSocketTransform(Mesh);
-		const FVector Start = MuzzleTransform.GetLocation();
-
-		FVector BeamEnd = HitTarget;
-
-		if (FHitResult HitResult;
-			TraceHit(Start, HitTarget, HitResult))
-		{
-			if (HitResult.bBlockingHit)
-			{
-				ApplyDamage(HitResult.GetActor());
-
-				BeamEnd = HitResult.ImpactPoint;
-
-				SpawnImpactParticles(HitResult);
-				SpawnHitSound(BeamEnd);
-			}
-		}
-		SpawnBeamParticles(MuzzleTransform, BeamEnd);
-		SpawnMuzzleFlashEffects(MuzzleTransform);
-	}
 }
 
-FVector AHitScanWeapon::TraceEndWithScatter(const FVector& TraceStart, const FVector& HitTarget)
+void AHitScanWeapon::ServerFire_Implementation(const FVector_NetQuantize& Start, const FVector_NetQuantize& HitTarget)
 {
-	const FVector ToTargetNormalized = (HitTarget - TraceStart).GetSafeNormal();
-	const FVector SphereCenter = TraceStart + ToTargetNormalized * DistanceToSphere;
+	if (const auto HitResult = PerformHitScan(Start, HitTarget);
+		HitResult.IsSet())
+	{
+		Super::ServerFire_Implementation(Start, HitResult.GetValue().ImpactPoint);
+	}
 
-	const FVector RandomDirection = UKismetMathLibrary::RandomUnitVector() * FMath::FRandRange(0.f, SphereRadius);
-	const FVector EndLocation = SphereCenter + RandomDirection;
-	const FVector ToEndLocation = (EndLocation - TraceStart).GetSafeNormal();
-	const FVector TraceEnd = TraceStart + ToEndLocation * (FVector::Distance(TraceStart, HitTarget) + 100.f);
+	Super::ServerFire_Implementation(Start, HitTarget);
+}
 
-	/*
-	DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 10, FColor::Cyan, false, 2);
-	DrawDebugSphere(GetWorld(), EndLocation, 3, 10, FColor::Green, false, 2);
-	DrawDebugSphere(GetWorld(), HitTarget, 10, 10, FColor::Red, false, 2);
-	DrawDebugLine(GetWorld(), TraceStart, EndLocation, FColor::Yellow, false, 2.f);
-	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 2.f);
-	*/
+void AHitScanWeapon::NetMulticastFire_Implementation(const FVector_NetQuantize& HitTarget)
+{
+	Super::NetMulticastFire_Implementation(HitTarget);
 
-	return TraceEnd;
+	if (const auto MuzzleTransform = GetMuzzleTransform();
+		MuzzleTransform.IsSet())
+	{
+		SpawnBeamParticles(MuzzleTransform.GetValue(), HitTarget);
+		SpawnMuzzleFlashEffects(MuzzleTransform.GetValue());
+	}
 }
 
 bool AHitScanWeapon::TraceHit(const FVector& Start, const FVector& HitTarget, FHitResult& HitResult)
 {
-	FVector End;
+	const FVector End = Start + (HitTarget - Start) * 1.25f;
 
-	if (bUserScatter)
-		End = TraceEndWithScatter(Start, HitTarget);
-	else
-		End = Start + (HitTarget - Start) * 1.25f;
+	return GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility);
+}
 
-	FVector BeamEnd = End;
-
-	bool HasHit;
-
-	if (HasHit = GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility);
-		HasHit)
+void AHitScanWeapon::NetMulticastSpawnImpactEffects_Implementation(const FHitResult& HitResult)
+{
+	if (const auto MuzzleTransform = GetMuzzleTransform();
+		MuzzleTransform.IsSet())
 	{
-		if (HitResult.bBlockingHit)
-		{
-			BeamEnd = HitResult.ImpactPoint;
-		}
+		SpawnBeamParticles(MuzzleTransform.GetValue(), HitResult.ImpactPoint);
 	}
-	SpawnBeamParticles(FTransform { Start }, BeamEnd);
-	return HasHit;
+
+	SpawnImpactParticles(HitResult);
+	SpawnHitSound(HitResult.ImpactPoint);
 }
 
 void AHitScanWeapon::SpawnImpactParticles(const FHitResult& HitResult) const
@@ -151,6 +123,22 @@ void AHitScanWeapon::SpawnHitSound(const FVector& HitLocation) const
 			0.5f,
 			FMath::FRandRange(-0.5f, 0.5f));
 	}
+}
+
+TOptional<FHitResult> AHitScanWeapon::PerformHitScan(const FVector& Start, const FVector& End)
+{
+	if (FHitResult HitResult;
+		TraceHit(Start, End, HitResult))
+	{
+		if (HitResult.bBlockingHit)
+		{
+			ApplyDamage(HitResult.GetActor());
+			NetMulticastSpawnImpactEffects(HitResult);
+
+			return HitResult;
+		}
+	}
+	return {};
 }
 
 void AHitScanWeapon::ApplyDamage(AActor* DamagedActor) const

@@ -14,14 +14,18 @@ class BLASTER_API AProjectileWeapon : public AWeapon
 public:
 	AProjectileWeapon();
 
-public:
-	virtual void Fire(const FVector& HitTarget) override;
-	
 protected:
 	virtual void BeginPlay() override;
 
 public:
 	virtual void Tick(float DeltaTime) override;
+
+public:
+	virtual void Fire(const FVector& HitTarget) override;
+
+public:
+	virtual void ServerFire_Implementation(const FVector_NetQuantize& Start, const FVector_NetQuantize& HitTarget) override;
+	virtual void NetMulticastFire_Implementation(const FVector_NetQuantize& HitTarget) override;
 
 private:
 	UPROPERTY(EditAnywhere)

@@ -219,8 +219,6 @@ void ABlasterCharacter::PlayReloadMontage() const
 	if (auto* AnimInstance = GetMesh()->GetAnimInstance();
 		IsValid(AnimInstance) and IsValid(ReloadMontage))
 	{
-		AnimInstance->Montage_Play(ReloadMontage);
-
 		FName SectionName;
 
 		switch (Combat->GetEquippedWeapon()->GetWeaponType())
@@ -265,7 +263,7 @@ void ABlasterCharacter::PlayReloadMontage() const
 				break;
 			}
 		}
-
+		AnimInstance->Montage_Play(ReloadMontage);
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }

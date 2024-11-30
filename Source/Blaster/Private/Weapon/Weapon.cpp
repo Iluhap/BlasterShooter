@@ -9,7 +9,7 @@
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
-#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "Weapon/AmmoCasing.h"
 
@@ -44,6 +44,13 @@ AWeapon::AWeapon()
 
 	MagazineCapacity = 30;
 	Ammo = MagazineCapacity;
+
+	DistanceToSphere = 400.f;
+	SphereRadius = 50.f;
+	bUseScatter = false;
+
+	MuzzleFlashSocketName = FName { "MuzzleFlash" };
+	AmmoEjectSocketName = FName { "AmmoEject" };
 }
 
 void AWeapon::BeginPlay()
@@ -175,27 +182,29 @@ void AWeapon::SetDestroyOnDrop(bool bDestroy)
 
 void AWeapon::Fire(const FVector& HitTarget)
 {
-	if (IsValid(FireAnimation))
+	if (const auto MuzzleTransform = GetMuzzleTransform();
+		MuzzleTransform.IsSet())
 	{
-		Mesh->PlayAnimation(FireAnimation, false);
+		const FVector Start = MuzzleTransform->GetLocation();
+		const FVector End = bUseScatter ? ApplyScatterTo(Start, HitTarget) : HitTarget;
+
+		OnFireEffects();
+		ServerFire(Start, End);
 	}
+}
 
-	if (IsValid(AmmoCasingClass))
-	{
-		if (const auto* AmmoEjectSocket = Mesh->GetSocketByName(FName { "AmmoEject" });
-			IsValid(AmmoEjectSocket))
-		{
-			const auto SocketTransform = AmmoEjectSocket->GetSocketTransform(Mesh);
-
-			GetWorld()->SpawnActor<AAmmoCasing>(
-				AmmoCasingClass,
-				SocketTransform.GetLocation(),
-				SocketTransform.GetRotation().Rotator()
-			);
-		}
-	}
-
+void AWeapon::ServerFire_Implementation(const FVector_NetQuantize& Start, const FVector_NetQuantize& HitTarget)
+{
 	SpendRound();
+	NetMulticastFire(HitTarget);
+}
+
+void AWeapon::NetMulticastFire_Implementation(const FVector_NetQuantize& HitTarget)
+{
+	if (IsValid(OwningBlasterCharacter) and OwningBlasterCharacter->IsLocallyControlled())
+		return;
+
+	OnFireEffects();
 }
 
 void AWeapon::Dropped()
@@ -211,24 +220,8 @@ void AWeapon::Dropped()
 
 void AWeapon::AddAmmo(int32 AmmoToAdd)
 {
-	Ammo = FMath::Clamp(Ammo - AmmoToAdd, 0, MagazineCapacity);
+	Ammo = FMath::Clamp(Ammo + AmmoToAdd, 0, MagazineCapacity);
 	UpdateHUDAmmo();
-}
-
-void AWeapon::OnRep_Owner()
-{
-	Super::OnRep_Owner();
-
-	if (not IsValid(Owner))
-	{
-		OwningBlasterCharacter = nullptr;
-		OwningBlasterPlayerController = nullptr;
-	}
-
-	if (IsValid(Owner))
-	{
-		UpdateHUDAmmo();
-	}
 }
 
 void AWeapon::SetMeshCollision(bool bEnable)
@@ -264,6 +257,69 @@ void AWeapon::SpendRound()
 	UpdateHUDAmmo();
 }
 
+void AWeapon::PlayFireAnimation() const
+{
+	if (IsValid(FireAnimation))
+	{
+		Mesh->PlayAnimation(FireAnimation, false);
+	}
+}
+
+void AWeapon::EjectCasing() const
+{
+	if (IsValid(AmmoCasingClass))
+	{
+		if (const auto* AmmoEjectSocket = Mesh->GetSocketByName(AmmoEjectSocketName);
+			IsValid(AmmoEjectSocket))
+		{
+			const auto SocketTransform = AmmoEjectSocket->GetSocketTransform(Mesh);
+
+			GetWorld()->SpawnActor<AAmmoCasing>(
+				AmmoCasingClass,
+				SocketTransform.GetLocation(),
+				SocketTransform.GetRotation().Rotator()
+			);
+		}
+	}
+}
+
+FVector AWeapon::ApplyScatterTo(const FVector& TraceStart, const FVector& HitTarget) const
+{
+	const FVector ToTargetNormalized = (HitTarget - TraceStart).GetSafeNormal();
+	const FVector SphereCenter = TraceStart + ToTargetNormalized * DistanceToSphere;
+
+	const FVector RandomDirection = UKismetMathLibrary::RandomUnitVector() * FMath::FRandRange(0.f, SphereRadius);
+	const FVector EndLocation = SphereCenter + RandomDirection;
+	const FVector ToEndLocation = (EndLocation - TraceStart).GetSafeNormal();
+	const FVector TraceEnd = TraceStart + ToEndLocation * (FVector::Distance(TraceStart, HitTarget) + 100.f);
+
+	/*
+	DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 10, FColor::Cyan, false, 2);
+	DrawDebugSphere(GetWorld(), EndLocation, 3, 10, FColor::Green, false, 2);
+	DrawDebugSphere(GetWorld(), HitTarget, 10, 10, FColor::Red, false, 2);
+	DrawDebugLine(GetWorld(), TraceStart, EndLocation, FColor::Yellow, false, 2.f);
+	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 2.f);
+	*/
+
+	return TraceEnd;
+}
+
+void AWeapon::OnRep_Owner()
+{
+	Super::OnRep_Owner();
+
+	if (not IsValid(Owner))
+	{
+		OwningBlasterCharacter = nullptr;
+		OwningBlasterPlayerController = nullptr;
+	}
+
+	if (IsValid(Owner))
+	{
+		UpdateHUDAmmo();
+	}
+}
+
 void AWeapon::OnRep_Ammo()
 {
 	UpdateHUDAmmo();
@@ -277,6 +333,12 @@ void AWeapon::OnRep_Ammo()
 		}
 	}
 }
+
+void AWeapon::OnRep_State()
+{
+	OnWeaponStateSet();
+}
+
 
 void AWeapon::UpdateHUDAmmo()
 {
@@ -314,6 +376,16 @@ bool AWeapon::IsFull() const
 	return Ammo == MagazineCapacity;
 }
 
+TOptional<FTransform> AWeapon::GetMuzzleTransform() const
+{
+	if (auto* MuzzleFlashSocket = Mesh->GetSocketByName(MuzzleFlashSocketName);
+		IsValid(MuzzleFlashSocket))
+	{
+		return MuzzleFlashSocket->GetSocketTransform(Mesh);
+	}
+	return {};
+}
+
 void AWeapon::SetOwningCharacter()
 {
 	OwningBlasterCharacter = not IsValid(OwningBlasterCharacter)
@@ -333,7 +405,8 @@ void AWeapon::SetOwningController()
 		                                : OwningBlasterPlayerController;
 }
 
-void AWeapon::OnRep_State()
+void AWeapon::OnFireEffects() const
 {
-	OnWeaponStateSet();
+	PlayFireAnimation();
+	EjectCasing();
 }
