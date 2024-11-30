@@ -18,28 +18,30 @@ void ABlasterPlayerState::AddToScore(float ScoreAmount)
 {
 	SetScore(GetScore() + ScoreAmount);
 
-	if (auto* BlasterController = Cast<ABlasterPlayerController>(GetPawn()->GetController());
-		IsValid(BlasterController))
-	{
-		BlasterController->SetHUDScore(GetScore());
-	}
+	OnScoreUpdate();
 }
 
 void ABlasterPlayerState::AddToDefeats(float DefeatsAmount)
 {
 	Defeats += DefeatsAmount;
 
-	if (auto* BlasterController = Cast<ABlasterPlayerController>(GetPawn()->GetController());
-		IsValid(BlasterController))
-	{
-		BlasterController->SetHUDDefeats(Defeats);
-	}
+	OnDefeatsUpdate();
 }
 
 void ABlasterPlayerState::OnRep_Score()
 {
 	Super::OnRep_Score();
 
+	OnScoreUpdate();
+}
+
+void ABlasterPlayerState::OnRep_Defeats()
+{
+	OnDefeatsUpdate();
+}
+
+void ABlasterPlayerState::OnScoreUpdate()
+{
 	if (auto* BlasterController = Cast<ABlasterPlayerController>(GetPawn()->GetController());
 		IsValid(BlasterController))
 	{
@@ -47,7 +49,7 @@ void ABlasterPlayerState::OnRep_Score()
 	}
 }
 
-void ABlasterPlayerState::OnRep_Defeats()
+void ABlasterPlayerState::OnDefeatsUpdate()
 {
 	if (auto* BlasterController = Cast<ABlasterPlayerController>(GetPawn()->GetController());
 		IsValid(BlasterController))

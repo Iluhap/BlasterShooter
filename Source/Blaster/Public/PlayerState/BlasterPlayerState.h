@@ -27,6 +27,10 @@ public: // Replication notifies
 	virtual void OnRep_Defeats();
 
 private:
+	void OnScoreUpdate();
+	void OnDefeatsUpdate();
+	
+private:
 	UPROPERTY(ReplicatedUsing = OnRep_Defeats)
 	int32 Defeats;
 };
