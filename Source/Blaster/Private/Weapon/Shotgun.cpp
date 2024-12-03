@@ -21,30 +21,66 @@ void AShotgun::Fire(const FVector& HitTarget)
 	if (const auto MuzzleTransform = GetMuzzleTransform();
 		MuzzleTransform.IsSet())
 	{
-		ServerFire(MuzzleTransform->GetLocation(), HitTarget);
+		const FVector Start = MuzzleTransform->GetLocation();
+
+		TArray<FVector_NetQuantize> HitTargets;
+		HitTargets.SetNumZeroed(NumberOfPellets);
+
+		for (auto& HitPoint : HitTargets)
+		{
+			HitPoint = ApplyScatterTo(Start, HitTarget);
+			SpawnBeamParticles(MuzzleTransform.GetValue(), HitPoint);
+		}
+
+		LocalFire(HitTargets);
+		ServerFirePellets(HitTargets);
 	}
 }
 
-void AShotgun::ServerFire_Implementation(const FVector_NetQuantize& Start, const FVector_NetQuantize& HitTarget)
+void AShotgun::LocalFire(const TArray<FVector_NetQuantize>& HitTargets)
+{
+	OnFireEffects();
+
+	if (const auto MuzzleTransform = GetMuzzleTransform();
+		MuzzleTransform.IsSet())
+	{
+		for (auto& HitPoint : HitTargets)
+		{
+			SpawnBeamParticles(MuzzleTransform.GetValue(), HitPoint);
+		}
+	}
+}
+
+void AShotgun::ServerFirePellets_Implementation(const TArray<FVector_NetQuantize>& HitTargets)
 {
 	SpendRound();
-
-	for (int32 i = 0; i < NumberOfPellets; i++)
+	if (const auto MuzzleTransform = GetMuzzleTransform();
+		MuzzleTransform.IsSet())
 	{
-		const FVector End = ApplyScatterTo(Start, HitTarget);
-		if (const auto HitResult = PerformHitScan(Start, End);
-			HitResult.IsSet())
+		TArray<FHitResult> HitResults;
+		for (auto& HitTarget : HitTargets)
 		{
-			NetMulticastSpawnImpactEffects(HitResult.GetValue());
+			if (const auto HitResult = PerformHitScan(MuzzleTransform->GetLocation(), HitTarget);
+				HitResult.IsSet())
+			{
+				HitResults.Add(HitResult.GetValue());
+			}
+			else
+			{
+				FHitResult MockHitResult;
+				MockHitResult.ImpactPoint = HitTarget;
+				MockHitResult.bBlockingHit = false;
+				HitResults.Add(MockHitResult);
+			}
 		}
-		else
-		{
-			NetMulticastFire(End);
-		}
+		NetMulticastFirePellets(HitResults);
 	}
 }
 
-void AShotgun::NetMulticastFire_Implementation(const FVector_NetQuantize& HitTarget)
+void AShotgun::NetMulticastFirePellets_Implementation(const TArray<FHitResult>& HitResults)
 {
-	Super::NetMulticastFire_Implementation(HitTarget);
+	for (const auto& HitResult : HitResults)
+	{
+		SpawnFireEffects(HitResult);
+	}
 }

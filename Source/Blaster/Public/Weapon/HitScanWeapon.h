@@ -16,8 +16,8 @@ public:
 
 public:
 	virtual void Fire(const FVector& HitTarget) override;
+	virtual void LocalFire(const FVector& HitTarget) override;
 
-public:
 	virtual void ServerFire_Implementation(const FVector_NetQuantize& Start, const FVector_NetQuantize& HitTarget) override;
 	virtual void NetMulticastFire_Implementation(const FVector_NetQuantize& HitTarget) override;
 
@@ -25,13 +25,15 @@ protected:
 	bool TraceHit(const FVector& Start, const FVector& HitTarget, FHitResult& HitResult);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastSpawnImpactEffects(const FHitResult& HitResult);
+	void NetMulticastSpawnFireEffects(const FHitResult& HitResult);
 
 protected:
-	void SpawnImpactParticles(const FHitResult& HitResult) const;
+	void SpawnImpactParticles(const FVector& ImpactPoint) const;
 	void SpawnBeamParticles(const FTransform& StartTransform, const FVector& BeamEnd) const;
 	void SpawnMuzzleFlashEffects(const FTransform& MuzzleTransform) const;
 	void SpawnHitSound(const FVector& HitLocation) const;
+
+	virtual void SpawnFireEffects(const FHitResult& HitResult) const;
 
 	virtual TOptional<FHitResult> PerformHitScan(const FVector& Start, const FVector& End);
 

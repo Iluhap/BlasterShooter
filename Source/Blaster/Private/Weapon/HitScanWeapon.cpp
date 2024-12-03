@@ -3,11 +3,8 @@
 
 #include "Weapon/HitScanWeapon.h"
 
-#include "ParticleHelper.h"
 #include "Character/BlasterCharacter.h"
-#include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
-#include "Kismet/KismetMathLibrary.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
 
@@ -25,15 +22,27 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 	Super::Fire(HitTarget);
 }
 
+void AHitScanWeapon::LocalFire(const FVector& HitTarget)
+{
+	Super::LocalFire(HitTarget);
+	if (const auto MuzzleTransform = GetMuzzleTransform();
+		MuzzleTransform.IsSet())
+	{
+		SpawnBeamParticles(MuzzleTransform.GetValue(), HitTarget);
+	}
+}
+
 void AHitScanWeapon::ServerFire_Implementation(const FVector_NetQuantize& Start, const FVector_NetQuantize& HitTarget)
 {
+	FVector End = HitTarget;
 	if (const auto HitResult = PerformHitScan(Start, HitTarget);
 		HitResult.IsSet())
 	{
-		Super::ServerFire_Implementation(Start, HitResult.GetValue().ImpactPoint);
+		End = HitResult->ImpactPoint;
+		NetMulticastSpawnFireEffects(HitResult.GetValue());
 	}
 
-	Super::ServerFire_Implementation(Start, HitTarget);
+	Super::ServerFire_Implementation(Start, End);
 }
 
 void AHitScanWeapon::NetMulticastFire_Implementation(const FVector_NetQuantize& HitTarget)
@@ -43,7 +52,6 @@ void AHitScanWeapon::NetMulticastFire_Implementation(const FVector_NetQuantize& 
 	if (const auto MuzzleTransform = GetMuzzleTransform();
 		MuzzleTransform.IsSet())
 	{
-		SpawnBeamParticles(MuzzleTransform.GetValue(), HitTarget);
 		SpawnMuzzleFlashEffects(MuzzleTransform.GetValue());
 	}
 }
@@ -55,27 +63,20 @@ bool AHitScanWeapon::TraceHit(const FVector& Start, const FVector& HitTarget, FH
 	return GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility);
 }
 
-void AHitScanWeapon::NetMulticastSpawnImpactEffects_Implementation(const FHitResult& HitResult)
+void AHitScanWeapon::NetMulticastSpawnFireEffects_Implementation(const FHitResult& HitResult)
 {
-	if (const auto MuzzleTransform = GetMuzzleTransform();
-		MuzzleTransform.IsSet())
-	{
-		SpawnBeamParticles(MuzzleTransform.GetValue(), HitResult.ImpactPoint);
-	}
-
-	SpawnImpactParticles(HitResult);
-	SpawnHitSound(HitResult.ImpactPoint);
+	SpawnFireEffects(HitResult);
 }
 
-void AHitScanWeapon::SpawnImpactParticles(const FHitResult& HitResult) const
+void AHitScanWeapon::SpawnImpactParticles(const FVector& ImpactPoint) const
 {
 	if (ImpactParticles)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(
 			GetWorld(),
 			ImpactParticles,
-			HitResult.ImpactPoint,
-			HitResult.ImpactNormal.Rotation()
+			ImpactPoint,
+			FRotator::ZeroRotator
 		);
 	}
 }
@@ -125,6 +126,25 @@ void AHitScanWeapon::SpawnHitSound(const FVector& HitLocation) const
 	}
 }
 
+void AHitScanWeapon::SpawnFireEffects(const FHitResult& HitResult) const
+{
+	if (IsValid(OwningBlasterCharacter)
+	and not OwningBlasterCharacter->IsLocallyControlled())
+	{
+		if (const auto MuzzleTransform = GetMuzzleTransform();
+			MuzzleTransform.IsSet())
+		{
+			SpawnBeamParticles(MuzzleTransform.GetValue(), HitResult.ImpactPoint);
+		}
+	}
+
+	if (HitResult.bBlockingHit)
+	{
+		SpawnImpactParticles(HitResult.ImpactPoint);
+		SpawnHitSound(HitResult.ImpactPoint);
+	}
+}
+
 TOptional<FHitResult> AHitScanWeapon::PerformHitScan(const FVector& Start, const FVector& End)
 {
 	if (FHitResult HitResult;
@@ -133,7 +153,6 @@ TOptional<FHitResult> AHitScanWeapon::PerformHitScan(const FVector& Start, const
 		if (HitResult.bBlockingHit)
 		{
 			ApplyDamage(HitResult.GetActor());
-			NetMulticastSpawnImpactEffects(HitResult);
 
 			return HitResult;
 		}

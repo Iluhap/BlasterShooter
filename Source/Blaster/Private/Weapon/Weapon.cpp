@@ -188,9 +188,14 @@ void AWeapon::Fire(const FVector& HitTarget)
 		const FVector Start = MuzzleTransform->GetLocation();
 		const FVector End = bUseScatter ? ApplyScatterTo(Start, HitTarget) : HitTarget;
 
-		OnFireEffects();
+		LocalFire(End);
 		ServerFire(Start, End);
 	}
+}
+
+void AWeapon::LocalFire(const FVector& HitTarget)
+{
+	OnFireEffects();
 }
 
 void AWeapon::ServerFire_Implementation(const FVector_NetQuantize& Start, const FVector_NetQuantize& HitTarget)
@@ -338,7 +343,6 @@ void AWeapon::OnRep_State()
 {
 	OnWeaponStateSet();
 }
-
 
 void AWeapon::UpdateHUDAmmo()
 {

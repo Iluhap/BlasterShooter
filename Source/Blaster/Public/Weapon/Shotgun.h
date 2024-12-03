@@ -16,11 +16,15 @@ public:
 
 public:
 	virtual void Fire(const FVector& HitTarget) override;
+	virtual void LocalFire(const TArray<FVector_NetQuantize>& HitTargets);
 
-public:
-	virtual void ServerFire_Implementation(const FVector_NetQuantize& Start, const FVector_NetQuantize& HitTarget) override;
-	virtual void NetMulticastFire_Implementation(const FVector_NetQuantize& HitTarget) override;
+protected:
+	UFUNCTION(Server, Reliable)
+	virtual void ServerFirePellets(const TArray<FVector_NetQuantize>& HitTargets);
 
+	UFUNCTION(NetMulticast, Reliable)
+	virtual void NetMulticastFirePellets(const TArray<FHitResult>& HitResults);
+	
 protected:
 	virtual void BeginPlay() override;
 

@@ -66,6 +66,8 @@ public:
 	void SetDestroyOnDrop(bool bDestroy);
 
 	virtual void Fire(const FVector& HitTarget);
+	virtual void LocalFire(const FVector& HitTarget);
+	
 	void Dropped();
 	void AddAmmo(int32 AmmoAmount);
 
@@ -104,6 +106,8 @@ protected:
 
 	void SpendRound();
 
+	void OnFireEffects() const;
+
 protected:
 	virtual void OnRep_Owner() override;
 
@@ -118,8 +122,6 @@ private:
 	void SetMeshCollision(bool bEnable);
 	void SetOwningCharacter();
 	void SetOwningController();
-
-	void OnFireEffects() const;
 
 public:
 	UPROPERTY(EditAnywhere)
@@ -179,7 +181,7 @@ public:
 	UPROPERTY(EditAnywhere, Category=Crosshair)
 	TObjectPtr<UTexture2D> CrosshairLeft;
 
-private:
+protected:
 	UPROPERTY()
 	class ABlasterPlayerController* OwningBlasterPlayerController;
 
