@@ -116,14 +116,24 @@ void UBlasterAnimInstance::UpdateCombatComponentVariables()
 	if (const auto* CombatComponent = BlasterCharacter->FindComponentByClass<UCombatComponent>();
 		IsValid(CombatComponent))
 	{
+		const auto CombatState = CombatComponent->GetCombatState();
+
 		bWeaponEquipped = CombatComponent->IsWeaponEquipped();
 		EquippedWeapon = CombatComponent->GetEquippedWeapon();
 		bIsAiming = CombatComponent->IsAiming();
-		bUseFABRIK = CombatComponent->GetCombatState() == ECombatState::ECS_Unoccupied;
+
+		bUseFABRIK = CombatState == ECombatState::ECS_Unoccupied;
+
+		if (BlasterCharacter->IsLocallyControlled()
+			and CombatState != ECombatState::ECS_ThrowingGrenade)
+		{
+			bUseFABRIK = not CombatComponent->IsLocallyReloading();
+		}
+
 		bUseAimOffsets = not BlasterCharacter->IsGameplayDisabled()
-			and CombatComponent->GetCombatState() == ECombatState::ECS_Unoccupied;
+			and CombatState == ECombatState::ECS_Unoccupied;
 		bTransformRightHand = not BlasterCharacter->IsGameplayDisabled()
-			and CombatComponent->GetCombatState() == ECombatState::ECS_Unoccupied;
+			and CombatState == ECombatState::ECS_Unoccupied;
 	}
 }
 

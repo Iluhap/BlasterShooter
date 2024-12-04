@@ -69,15 +69,13 @@ public: // Getters
 	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
 	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
 	FORCEINLINE int32 GetGrenades() const { return Grenades; }
+	FORCEINLINE bool IsLocallyReloading() const { return bLocalReloading; }
 
 	bool ShouldSwapWeapons() const;
 
 private:
 	UFUNCTION(Server, Reliable)
 	void ServerSetAiming(bool bIsAiming);
-
-	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastSetAiming(bool bIsAiming);
 
 	UFUNCTION(Server, Reliable)
 	void ServerReload();
@@ -188,6 +186,8 @@ private:
 
 	UPROPERTY(Replicated)
 	bool bFiring;
+
+	bool bLocalReloading;
 
 	float CrosshairVelocityFactor;
 	float CrosshairInAirFactor;
