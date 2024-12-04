@@ -120,29 +120,26 @@ private:
 	int32 AmountToReload() const;
 
 	void UpdateAmmoValues();
-
 	void UpdateShotgunAmmoValues();
 
 	void PlayEquipSound(const AWeapon* Weapon) const;
-
 	void DropWeapon(AWeapon* Weapon);
-
 	void AttachActorToSocket(AActor* Actor, const FName& AttachSocketName);
-
 	void ReloadEmptyWeapon();
-
 	void ShowAttachedGrenade(bool bVisible);
 
 	void EquipPrimaryWeapon(AWeapon* WeaponToEquip);
 	void EquipSecondaryWeapon(AWeapon* WeaponToEquip);
 
+	void SetAimingImpl(bool bIsAiming);
+
 private:
 	UFUNCTION(Server, Reliable)
 	void ServerPlayFireMontage();
-	
+
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastPlayFireMontage();
-	
+
 private:
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
@@ -158,6 +155,9 @@ private:
 
 	UFUNCTION()
 	void OnRep_Grenades();
+
+	UFUNCTION()
+	void OnRep_Aiming();
 
 private:
 	UPROPERTY()
@@ -181,8 +181,10 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AProjectile> GrenadeClass;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing=OnRep_Aiming)
 	bool bAiming;
+
+	bool bLocalAimingPressed;
 
 	UPROPERTY(Replicated)
 	bool bFiring;

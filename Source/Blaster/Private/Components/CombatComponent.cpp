@@ -31,6 +31,7 @@ UCombatComponent::UCombatComponent()
 	EquippedWeapon = nullptr;
 	SecondaryWeapon = nullptr;
 	bAiming = false;
+	bLocalAimingPressed = false;
 	bFiring = false;
 
 	RightHandSocket = "RightHandSocket";
@@ -394,28 +395,41 @@ void UCombatComponent::PlayEquipSound(const AWeapon* Weapon) const
 
 void UCombatComponent::SetAiming(bool bIsAiming)
 {
+	SetAimingImpl(bIsAiming);
 	ServerSetAiming(bIsAiming);
 
 	if (IsValid(Character) and IsValid(EquippedWeapon))
 	{
-		if (Character->IsLocallyControlled() and EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle)
+		if (Character->IsLocallyControlled())
 		{
-			Character->ShowSniperScopeWidget(bIsAiming);
+			bLocalAimingPressed = bIsAiming;
+
+			if (EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle)
+			{
+				Character->ShowSniperScopeWidget(bIsAiming);
+			}
 		}
 	}
 }
 
-void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
+void UCombatComponent::OnRep_Aiming()
 {
-	NetMulticastSetAiming(bIsAiming);
+	if (IsValid(Character) and Character->IsLocallyControlled())
+	{
+		bAiming = bLocalAimingPressed;
+	}
 }
 
-void UCombatComponent::NetMulticastSetAiming_Implementation(bool bIsAiming)
+void UCombatComponent::SetAimingImpl(bool bIsAiming)
 {
 	bAiming = bIsAiming;
-
 	const float& NewWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed;
 	SetMaxWalkSpeed(NewWalkSpeed);
+}
+
+void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
+{
+	SetAimingImpl(bIsAiming);
 }
 
 void UCombatComponent::Fire()
