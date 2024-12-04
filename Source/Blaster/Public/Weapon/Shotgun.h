@@ -14,9 +14,17 @@ class BLASTER_API AShotgun : public AHitScanWeapon
 public:
 	AShotgun();
 
+protected:
+	virtual void BeginPlay() override;
+
+public:
+	virtual void Tick(float DeltaTime) override;
+
 public:
 	virtual void Fire(const FVector& HitTarget) override;
-	virtual void LocalFire(const TArray<FVector_NetQuantize>& HitTargets);
+
+protected:
+	void LocalFirePellets(const TArray<FVector_NetQuantize>& HitTargets);
 
 protected:
 	UFUNCTION(Server, Reliable)
@@ -24,12 +32,6 @@ protected:
 
 	UFUNCTION(NetMulticast, Reliable)
 	virtual void NetMulticastFirePellets(const TArray<FHitResult>& HitResults);
-	
-protected:
-	virtual void BeginPlay() override;
-
-public:
-	virtual void Tick(float DeltaTime) override;
 
 private:
 	UPROPERTY(EditAnywhere, Category="Weapon Scatter")

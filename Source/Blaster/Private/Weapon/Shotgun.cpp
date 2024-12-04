@@ -32,14 +32,14 @@ void AShotgun::Fire(const FVector& HitTarget)
 			SpawnBeamParticles(MuzzleTransform.GetValue(), HitPoint);
 		}
 
-		LocalFire(HitTargets);
+		LocalFirePellets(HitTargets);
 		ServerFirePellets(HitTargets);
 	}
 }
 
-void AShotgun::LocalFire(const TArray<FVector_NetQuantize>& HitTargets)
+void AShotgun::LocalFirePellets(const TArray<FVector_NetQuantize>& HitTargets)
 {
-	OnFireEffects();
+	AWeapon::LocalFire({});
 
 	if (const auto MuzzleTransform = GetMuzzleTransform();
 		MuzzleTransform.IsSet())

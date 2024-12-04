@@ -67,7 +67,7 @@ public:
 
 	virtual void Fire(const FVector& HitTarget);
 	virtual void LocalFire(const FVector& HitTarget);
-	
+
 	void Dropped();
 	void AddAmmo(int32 AmmoAmount);
 
@@ -98,6 +98,12 @@ protected:
 	UFUNCTION(NetMulticast, Unreliable)
 	virtual void NetMulticastFire(const FVector_NetQuantize& HitTarget);
 
+	UFUNCTION(Client, Reliable)
+	void ClientUpdateAmmo(int32 ServerAmmo);
+
+	UFUNCTION(Client, Reliable)
+	void ClientAddAmmo(int32 ServerAmmo);
+
 protected:
 	void PlayFireAnimation() const;
 	void EjectCasing() const;
@@ -114,9 +120,6 @@ protected:
 private:
 	UFUNCTION()
 	void OnRep_State();
-
-	UFUNCTION()
-	void OnRep_Ammo();
 
 private:
 	void SetMeshCollision(bool bEnable);
@@ -207,10 +210,13 @@ private:
 	UPROPERTY(EditAnywhere, Category=Properties)
 	bool bAutomatic;
 
-	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_Ammo)
+	UPROPERTY(EditAnywhere)
 	int32 Ammo;
 
-	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_Ammo)
+	UPROPERTY()
+	int32 AmmoUpdateSequence;
+
+	UPROPERTY(EditAnywhere)
 	int32 MagazineCapacity;
 
 	UPROPERTY(EditAnywhere, Category=Properties)

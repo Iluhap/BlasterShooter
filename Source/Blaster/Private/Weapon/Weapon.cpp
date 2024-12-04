@@ -80,7 +80,6 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, State);
-	DOREPLIFETIME(AWeapon, Ammo);
 }
 
 void AWeapon::OnAreaBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -196,6 +195,7 @@ void AWeapon::Fire(const FVector& HitTarget)
 void AWeapon::LocalFire(const FVector& HitTarget)
 {
 	OnFireEffects();
+	SpendRound();
 }
 
 void AWeapon::ServerFire_Implementation(const FVector_NetQuantize& Start, const FVector_NetQuantize& HitTarget)
@@ -221,12 +221,6 @@ void AWeapon::Dropped()
 
 	OwningBlasterCharacter = nullptr;
 	OwningBlasterPlayerController = nullptr;
-}
-
-void AWeapon::AddAmmo(int32 AmmoToAdd)
-{
-	Ammo = FMath::Clamp(Ammo + AmmoToAdd, 0, MagazineCapacity);
-	UpdateHUDAmmo();
 }
 
 void AWeapon::SetMeshCollision(bool bEnable)
@@ -259,6 +253,51 @@ void AWeapon::SpendRound()
 {
 	Ammo = FMath::Clamp(Ammo - 1, 0, MagazineCapacity);
 
+	UpdateHUDAmmo();
+
+	if (HasAuthority())
+	{
+		ClientUpdateAmmo(Ammo);
+	}
+	else
+	{
+		++AmmoUpdateSequence;
+	}
+}
+
+void AWeapon::ClientUpdateAmmo_Implementation(int32 ServerAmmo)
+{
+	if (HasAuthority())
+		return;
+
+	Ammo = ServerAmmo;
+	--AmmoUpdateSequence;
+	Ammo -= AmmoUpdateSequence;
+	UpdateHUDAmmo();
+}
+
+void AWeapon::AddAmmo(int32 AmmoToAdd)
+{
+	Ammo = FMath::Clamp(Ammo + AmmoToAdd, 0, MagazineCapacity);
+	UpdateHUDAmmo();
+	ClientAddAmmo(AmmoToAdd);
+}
+
+void AWeapon::ClientAddAmmo_Implementation(int32 AmmoToAdd)
+{
+	if (HasAuthority())
+		return;
+
+	Ammo = FMath::Clamp(Ammo + AmmoToAdd, 0, MagazineCapacity);
+
+	if (IsValid(OwningBlasterCharacter))
+	{
+		if (auto* CombatComponent = OwningBlasterCharacter->FindComponentByClass<UCombatComponent>();
+			IsValid(CombatComponent) and IsFull())
+		{
+			CombatComponent->JumpToShotgunEnd();
+		}
+	}
 	UpdateHUDAmmo();
 }
 
@@ -322,20 +361,6 @@ void AWeapon::OnRep_Owner()
 	if (IsValid(Owner))
 	{
 		UpdateHUDAmmo();
-	}
-}
-
-void AWeapon::OnRep_Ammo()
-{
-	UpdateHUDAmmo();
-
-	if (IsValid(OwningBlasterCharacter))
-	{
-		if (auto* CombatComponent = OwningBlasterCharacter->FindComponentByClass<UCombatComponent>();
-			IsValid(CombatComponent) and IsFull())
-		{
-			CombatComponent->JumpToShotgunEnd();
-		}
 	}
 }
 
