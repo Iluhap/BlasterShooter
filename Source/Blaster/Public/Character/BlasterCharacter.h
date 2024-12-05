@@ -18,6 +18,9 @@ class BLASTER_API ABlasterCharacter : public ACharacter, public IInteractWithCro
 public:
 	ABlasterCharacter();
 
+private:
+	void InitHitBoxes();
+
 public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -159,6 +162,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<UStaticMeshComponent> GrenadeMesh;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
+	TObjectPtr<class ULagCompensationComponent> LagCompensationComponent;
+
 private:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	TObjectPtr<UAnimMontage> FireWeaponMontage;
@@ -264,4 +270,61 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> SwapWeaponsAction;
+
+public:
+	/*
+	 * Hit boxes used to server-side rewind
+	 */
+
+	UPROPERTY()
+	TMap<FName, class UBoxComponent*> HitBoxes;
+
+private:
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Head;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Pelvis;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Spine_02;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Spine_03;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> UpperArm_L;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> UpperArm_R;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> LowerArm_L;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> LowerArm_R;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Hand_L;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Hand_R;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Thigh_L;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Thigh_R;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Calf_L;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Calf_R;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Foot_R;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UBoxComponent> Foot_L;
 };
