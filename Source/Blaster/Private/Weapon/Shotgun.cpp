@@ -60,10 +60,11 @@ void AShotgun::ServerFirePellets_Implementation(const TArray<FVector_NetQuantize
 		TArray<FHitResult> HitResults;
 		for (auto& HitTarget : HitTargets)
 		{
-			if (const auto HitResult = PerformHitScan(MuzzleTransform->GetLocation(), HitTarget);
-				HitResult.IsSet())
+			if (FHitResult HitResult;
+				TraceHit(MuzzleTransform->GetLocation(), HitTarget, HitResult))
 			{
-				HitResults.Add(HitResult.GetValue());
+				ApplyDamage(HitResult.GetActor());
+				HitResults.Add(HitResult);
 			}
 			else
 			{

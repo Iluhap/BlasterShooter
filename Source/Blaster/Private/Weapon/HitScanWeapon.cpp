@@ -4,17 +4,21 @@
 #include "Weapon/HitScanWeapon.h"
 
 #include "Character/BlasterCharacter.h"
+#include "Character/BlasterPlayerController.h"
+#include "Components/LagCompensationComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
 
 AHitScanWeapon::AHitScanWeapon()
 {
-	Damage = 10;
-
 	DistanceToSphere = 800.f;
 	SphereRadius = 75.f;
 	bUseScatter = true;
+
+	Damage = 10.f;
+
+	bUseServerSideRewind = true;
 }
 
 void AHitScanWeapon::Fire(const FVector& HitTarget)
@@ -25,38 +29,80 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 void AHitScanWeapon::LocalFire(const FVector& HitTarget)
 {
 	Super::LocalFire(HitTarget);
+
 	if (const auto MuzzleTransform = GetMuzzleTransform();
 		MuzzleTransform.IsSet())
 	{
+		SpawnMuzzleFlashEffects(MuzzleTransform.GetValue());
 		SpawnBeamParticles(MuzzleTransform.GetValue(), HitTarget);
+
+		const FVector Start = MuzzleTransform->GetLocation();
+
+		if (FHitResult HitResult;
+			TraceHit(Start, HitTarget, HitResult))
+		{
+			SpawnFireEffects(HitResult);
+			if (auto* BlasterCharacter = Cast<ABlasterCharacter>(HitResult.GetActor());
+				IsValid(BlasterCharacter))
+			{
+				ServerHitConfirm({
+					.HitCharacter = BlasterCharacter,
+					.TraceStart = Start,
+					.HitLocation = HitResult.ImpactPoint,
+					.HitTime = OwningBlasterPlayerController->GetServerTime()
+				});
+			}
+		}
 	}
+}
+
+void AHitScanWeapon::ServerHitConfirm_Implementation(const FServerSideRewindRequest& Request)
+{
+	if (not IsValid(OwningBlasterCharacter))
+		return;
+
+	if (auto* LagCompensationComponent = OwningBlasterCharacter->FindComponentByClass<ULagCompensationComponent>();
+		IsValid(LagCompensationComponent))
+	{
+		if (const auto& [TracedHitBoxes] = LagCompensationComponent->ServerSideRewind(Request);
+			not TracedHitBoxes.IsEmpty())
+		{
+			if (IsValid(Request.HitCharacter))
+			{
+				ApplyDamage(Request.HitCharacter);
+			}
+			for (const auto& [Name, HitResult] : TracedHitBoxes)
+			{
+				NetMulticastSpawnFireEffects(HitResult);
+			}
+		}
+	}
+	FHitResult MockHitResult;
+	MockHitResult.ImpactPoint = Request.HitLocation;
+	MockHitResult.bBlockingHit = false;
+	NetMulticastSpawnFireEffects(MockHitResult);
 }
 
 void AHitScanWeapon::ServerFire_Implementation(const FVector_NetQuantize& Start, const FVector_NetQuantize& HitTarget)
 {
-	FVector End = HitTarget;
-	if (const auto HitResult = PerformHitScan(Start, HitTarget);
-		HitResult.IsSet())
-	{
-		End = HitResult->ImpactPoint;
-		NetMulticastSpawnFireEffects(HitResult.GetValue());
-	}
-
-	Super::ServerFire_Implementation(Start, End);
+	Super::ServerFire_Implementation(Start, HitTarget);
 }
 
 void AHitScanWeapon::NetMulticastFire_Implementation(const FVector_NetQuantize& HitTarget)
 {
 	Super::NetMulticastFire_Implementation(HitTarget);
 
-	if (const auto MuzzleTransform = GetMuzzleTransform();
-		MuzzleTransform.IsSet())
+	if (IsValid(OwningBlasterCharacter) and not OwningBlasterCharacter->IsLocallyControlled())
 	{
-		SpawnMuzzleFlashEffects(MuzzleTransform.GetValue());
+		if (const auto MuzzleTransform = GetMuzzleTransform();
+			MuzzleTransform.IsSet())
+		{
+			SpawnMuzzleFlashEffects(MuzzleTransform.GetValue());
+		}
 	}
 }
 
-bool AHitScanWeapon::TraceHit(const FVector& Start, const FVector& HitTarget, FHitResult& HitResult)
+bool AHitScanWeapon::TraceHit(const FVector& Start, const FVector& HitTarget, FHitResult& HitResult) const
 {
 	const FVector End = Start + (HitTarget - Start) * 1.25f;
 
@@ -65,7 +111,10 @@ bool AHitScanWeapon::TraceHit(const FVector& Start, const FVector& HitTarget, FH
 
 void AHitScanWeapon::NetMulticastSpawnFireEffects_Implementation(const FHitResult& HitResult)
 {
-	SpawnFireEffects(HitResult);
+	if (IsValid(OwningBlasterCharacter) and not OwningBlasterCharacter->IsLocallyControlled())
+	{
+		SpawnFireEffects(HitResult);
+	}
 }
 
 void AHitScanWeapon::SpawnImpactParticles(const FVector& ImpactPoint) const
@@ -128,14 +177,10 @@ void AHitScanWeapon::SpawnHitSound(const FVector& HitLocation) const
 
 void AHitScanWeapon::SpawnFireEffects(const FHitResult& HitResult) const
 {
-	if (IsValid(OwningBlasterCharacter)
-	and not OwningBlasterCharacter->IsLocallyControlled())
+	if (const auto MuzzleTransform = GetMuzzleTransform();
+		MuzzleTransform.IsSet())
 	{
-		if (const auto MuzzleTransform = GetMuzzleTransform();
-			MuzzleTransform.IsSet())
-		{
-			SpawnBeamParticles(MuzzleTransform.GetValue(), HitResult.ImpactPoint);
-		}
+		SpawnBeamParticles(MuzzleTransform.GetValue(), HitResult.ImpactPoint);
 	}
 
 	if (HitResult.bBlockingHit)
@@ -143,21 +188,6 @@ void AHitScanWeapon::SpawnFireEffects(const FHitResult& HitResult) const
 		SpawnImpactParticles(HitResult.ImpactPoint);
 		SpawnHitSound(HitResult.ImpactPoint);
 	}
-}
-
-TOptional<FHitResult> AHitScanWeapon::PerformHitScan(const FVector& Start, const FVector& End)
-{
-	if (FHitResult HitResult;
-		TraceHit(Start, End, HitResult))
-	{
-		if (HitResult.bBlockingHit)
-		{
-			ApplyDamage(HitResult.GetActor());
-
-			return HitResult;
-		}
-	}
-	return {};
 }
 
 void AHitScanWeapon::ApplyDamage(AActor* DamagedActor) const

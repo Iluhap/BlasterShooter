@@ -82,14 +82,14 @@ public:
 	TOptional<FTransform> GetMuzzleTransform() const;
 
 public:
-	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; };
-	FORCEINLINE float GetZoomInterpSpeed() const { return ZoomInterpSpeed; };
-	FORCEINLINE float GetFireRate() const { return FireRate; };
-	FORCEINLINE float IsAutomatic() const { return bAutomatic; };
-	FORCEINLINE EWeaponType GetWeaponType() const { return Type; };
-	FORCEINLINE EFireType GetFireType() const { return FireType; };
-	FORCEINLINE int32 GetAmmo() const { return Ammo; };
-	FORCEINLINE int32 GetMagazineCapacity() const { return MagazineCapacity; };
+	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; }
+	FORCEINLINE float GetZoomInterpSpeed() const { return ZoomInterpSpeed; }
+	FORCEINLINE float GetFireRate() const { return FireRate; }
+	FORCEINLINE float IsAutomatic() const { return bAutomatic; }
+	FORCEINLINE EWeaponType GetWeaponType() const { return Type; }
+	FORCEINLINE EFireType GetFireType() const { return FireType; }
+	FORCEINLINE int32 GetAmmo() const { return Ammo; }
+	FORCEINLINE int32 GetMagazineCapacity() const { return MagazineCapacity; }
 
 protected:
 	UFUNCTION(Server, Reliable)

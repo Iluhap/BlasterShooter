@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Templates/Tuple.h"
 #include "LagCompensationComponent.generated.h"
 
 
@@ -29,7 +30,35 @@ struct FFramePackage
 
 	float Time;
 
+	UPROPERTY()
 	TMap<FName, FHitBoxInformation> HitBoxInfo;
+};
+
+USTRUCT()
+struct FServerSideRewindResult
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TMap<FName, FHitResult> TracedHitBoxes;
+};
+
+USTRUCT()
+struct FServerSideRewindRequest
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	class ABlasterCharacter* HitCharacter;
+
+	UPROPERTY()
+	FVector_NetQuantize TraceStart;
+
+	UPROPERTY()
+	FVector_NetQuantize HitLocation;
+
+	UPROPERTY()
+	float HitTime;
 };
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -48,19 +77,26 @@ public:
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
-	void SaveFramePackage(FFramePackage& Package);
+	void SaveFramePackage(FFramePackage& Package) const;
 	void ShowFramePackage(const FFramePackage& Package) const;
 
-	void ServerSideRewind(const class ABlasterCharacter* HitCharacter,
-	                      const FVector_NetQuantize& TraceStart,
-	                      const FVector_NetQuantize& HitTarget,
-	                      float HitTime);
+	FServerSideRewindResult ServerSideRewind(const FServerSideRewindRequest& Request);
+
+	FServerSideRewindResult ConfirmHit(const FFramePackage& Package,
+	                                   ABlasterCharacter* HitCharacter,
+	                                   const FVector_NetQuantize& TraceStart,
+	                                   const FVector_NetQuantize& HitLocation);
 
 private:
 	void AddFrameToHistory();
 	float GetHistoryLength() const;
-
 	FFramePackage InterpBetweenFrames(const FFramePackage& Older, const FFramePackage& Younger, float HitTime);
+	void CacheBoxPosition(ABlasterCharacter* Character, FFramePackage& OutFramePackage);
+	void MoveBoxes(ABlasterCharacter* Character, const FFramePackage& TargetPackage);
+	void ResetHitBoxes(ABlasterCharacter* Character, const FFramePackage& TargetPackage);
+	void EnableCharacterMeshCollision(ABlasterCharacter* Character, ECollisionEnabled::Type CollisionEnabled) const;
+
+	void SaveFramePackage();
 
 private:
 	TDoubleLinkedList<FFramePackage> FrameHistory;

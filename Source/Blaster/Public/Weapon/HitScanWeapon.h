@@ -18,12 +18,15 @@ public:
 	virtual void Fire(const FVector& HitTarget) override;
 	virtual void LocalFire(const FVector& HitTarget) override;
 
-	virtual void ServerFire_Implementation(const FVector_NetQuantize& Start, const FVector_NetQuantize& HitTarget) override;
+	virtual void ServerFire_Implementation(const FVector_NetQuantize& Start,
+	                                       const FVector_NetQuantize& HitTarget) override;
 	virtual void NetMulticastFire_Implementation(const FVector_NetQuantize& HitTarget) override;
 
 protected:
-	bool TraceHit(const FVector& Start, const FVector& HitTarget, FHitResult& HitResult);
+	UFUNCTION(Server, Reliable)
+	virtual void ServerHitConfirm(const struct FServerSideRewindRequest& Request);
 
+protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastSpawnFireEffects(const FHitResult& HitResult);
 
@@ -32,11 +35,9 @@ protected:
 	void SpawnBeamParticles(const FTransform& StartTransform, const FVector& BeamEnd) const;
 	void SpawnMuzzleFlashEffects(const FTransform& MuzzleTransform) const;
 	void SpawnHitSound(const FVector& HitLocation) const;
-
 	virtual void SpawnFireEffects(const FHitResult& HitResult) const;
 
-	virtual TOptional<FHitResult> PerformHitScan(const FVector& Start, const FVector& End);
-
+	bool TraceHit(const FVector& Start, const FVector& HitTarget, FHitResult& HitResult) const;
 	void ApplyDamage(AActor* DamagedActor) const;
 
 private:
@@ -57,4 +58,7 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<USoundCue> HitSound;
+
+	UPROPERTY(EditAnywhere)
+	bool bUseServerSideRewind;
 };

@@ -51,6 +51,9 @@ public:
 	                       float Warmup, float Match,
 	                       float Cooldown, float StartingTime);
 
+public:
+	FORCEINLINE float GetNetTripTime() const { return NetTripTime; }
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* PawnToPossess) override;
@@ -72,7 +75,7 @@ private:
 	FText MakeTimeTextFromSeconds(float TimeSeconds) const;
 
 	void SetShieldVisibility(ESlateVisibility Visibility);
-	
+
 	void CheckPing();
 
 private:
@@ -92,6 +95,8 @@ private:
 	float LevelStartingTime;
 
 	int32 CountdownInt;
+
+	float NetTripTime;
 
 	UPROPERTY(ReplicatedUsing=OnRep_MatchState)
 	FName CurrentMatchState;

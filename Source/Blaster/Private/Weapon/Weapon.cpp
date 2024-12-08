@@ -195,7 +195,8 @@ void AWeapon::Fire(const FVector& HitTarget)
 void AWeapon::LocalFire(const FVector& HitTarget)
 {
 	OnFireEffects();
-	SpendRound();
+	if (GetLocalRole() == ROLE_AutonomousProxy)
+		SpendRound();
 }
 
 void AWeapon::ServerFire_Implementation(const FVector_NetQuantize& Start, const FVector_NetQuantize& HitTarget)
