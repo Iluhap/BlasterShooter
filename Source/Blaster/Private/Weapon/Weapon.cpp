@@ -195,7 +195,8 @@ void AWeapon::Fire(const FVector& HitTarget)
 void AWeapon::LocalFire(const FVector& HitTarget)
 {
 	OnFireEffects();
-	if (GetLocalRole() == ROLE_AutonomousProxy)
+
+	if (not HasAuthority())
 		SpendRound();
 }
 
