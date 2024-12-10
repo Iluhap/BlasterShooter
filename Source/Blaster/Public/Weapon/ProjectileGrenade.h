@@ -14,6 +14,10 @@ class BLASTER_API AProjectileGrenade : public AProjectile
 public:
 	AProjectileGrenade();
 
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
+
 public:
 	virtual void Destroyed() override;
 

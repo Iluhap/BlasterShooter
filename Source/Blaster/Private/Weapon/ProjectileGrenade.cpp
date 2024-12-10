@@ -25,6 +25,28 @@ AProjectileGrenade::AProjectileGrenade()
 	MovementComponent->bShouldBounce = true;
 }
 
+#if WITH_EDITOR
+
+void AProjectileGrenade::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	FName PropertyName = PropertyChangedEvent.Property->IsValidLowLevel()
+							 ? PropertyChangedEvent.Property->GetFName()
+							 : NAME_None;
+
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(AProjectileGrenade, InitialSpeed))
+	{
+		if (IsValid(MovementComponent))
+		{
+			MovementComponent->InitialSpeed = InitialSpeed;
+			MovementComponent->MaxSpeed = InitialSpeed;
+		}
+	}
+}
+
+#endif
+
 void AProjectileGrenade::Destroyed()
 {
 	ExplodeDamage();

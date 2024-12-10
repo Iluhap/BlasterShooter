@@ -18,7 +18,31 @@ AProjectileRocket::AProjectileRocket()
 	RocketMovementComponent = CreateDefaultSubobject<URocketMovementComponent>("Movement Component");
 	RocketMovementComponent->bRotationFollowsVelocity = true;
 	RocketMovementComponent->SetIsReplicated(true);
+	RocketMovementComponent->InitialSpeed = InitialSpeed;
+	RocketMovementComponent->MaxSpeed = InitialSpeed;
 }
+
+#if WITH_EDITOR
+
+void AProjectileRocket::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	FName PropertyName = PropertyChangedEvent.Property->IsValidLowLevel()
+							 ? PropertyChangedEvent.Property->GetFName()
+							 : NAME_None;
+
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(AProjectileRocket, InitialSpeed))
+	{
+		if (IsValid(MovementComponent))
+		{
+			MovementComponent->InitialSpeed = InitialSpeed;
+			MovementComponent->MaxSpeed = InitialSpeed;
+		}
+	}
+}
+
+#endif
 
 void AProjectileRocket::Destroyed()
 {

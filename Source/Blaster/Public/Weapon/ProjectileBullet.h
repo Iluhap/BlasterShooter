@@ -14,6 +14,10 @@ class BLASTER_API AProjectileBullet : public AProjectile
 public:
 	AProjectileBullet();
 
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -23,4 +27,9 @@ protected:
 
 public:
 	virtual void Tick(float DeltaTime) override;
+
+private:
+	bool bUseServerSideRewind = false;
+	FVector_NetQuantize TraceStart;
+	FVector_NetQuantize100 InitialVelocity;
 };

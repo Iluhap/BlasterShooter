@@ -34,6 +34,8 @@ AProjectile::AProjectile()
 
 	RadialDamageInnerRadius = 200.f;
 	RadialDamageOuterRadius = 500.f;
+
+	InitialSpeed = 1000;
 }
 
 void AProjectile::Destroyed()

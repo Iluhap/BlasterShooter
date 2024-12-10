@@ -59,6 +59,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category=Damage)
 	float Damage;
 
+	UPROPERTY(EditAnywhere)
+	float InitialSpeed;
+
 private:
 	UPROPERTY(EditAnywhere, Category=Damage)
 	float RadialDamageInnerRadius;
