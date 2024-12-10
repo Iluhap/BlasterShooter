@@ -1,5 +1,9 @@
 ﻿#include "Weapon/Shotgun.h"
 
+#include "Character/BlasterCharacter.h"
+#include "Character/BlasterPlayerController.h"
+#include "Components/LagCompensationComponent.h"
+
 
 AShotgun::AShotgun()
 {
@@ -29,11 +33,9 @@ void AShotgun::Fire(const FVector& HitTarget)
 		for (auto& HitPoint : HitTargets)
 		{
 			HitPoint = ApplyScatterTo(Start, HitTarget);
-			SpawnBeamParticles(MuzzleTransform.GetValue(), HitPoint);
 		}
 
 		LocalFirePellets(HitTargets);
-		ServerFirePellets(HitTargets);
 	}
 }
 
@@ -44,37 +46,51 @@ void AShotgun::LocalFirePellets(const TArray<FVector_NetQuantize>& HitTargets)
 	if (const auto MuzzleTransform = GetMuzzleTransform();
 		MuzzleTransform.IsSet())
 	{
+		FShotgunServerSideRewindRequest Request;
 		for (auto& HitPoint : HitTargets)
 		{
 			SpawnBeamParticles(MuzzleTransform.GetValue(), HitPoint);
+			if (FHitResult HitResult;
+				TraceHit(MuzzleTransform->GetLocation(), HitPoint, HitResult))
+			{
+				SpawnFireEffects(HitResult);
+				if (auto* BlasterCharacter = Cast<ABlasterCharacter>(HitResult.GetActor());
+					IsValid(BlasterCharacter))
+				{
+					Request.Requests.Add({
+						.HitCharacter = BlasterCharacter,
+						.TraceStart = MuzzleTransform->GetLocation(),
+						.HitLocation = HitResult.ImpactPoint,
+						.HitTime = OwningBlasterPlayerController->GetServerTime()
+					});
+				}
+			}
 		}
+		ServerConfirmPelletsHit(Request);
 	}
 }
 
-void AShotgun::ServerFirePellets_Implementation(const TArray<FVector_NetQuantize>& HitTargets)
+void AShotgun::ServerConfirmPelletsHit_Implementation(const FShotgunServerSideRewindRequest& Request)
 {
-	SpendRound();
-	if (const auto MuzzleTransform = GetMuzzleTransform();
-		MuzzleTransform.IsSet())
+	if (not IsValid(OwningBlasterCharacter))
+		return;
+
+	if (auto* LagCompensationComponent = OwningBlasterCharacter->FindComponentByClass<ULagCompensationComponent>();
+		IsValid(LagCompensationComponent))
 	{
-		TArray<FHitResult> HitResults;
-		for (auto& HitTarget : HitTargets)
+		if (const auto& [TracedCharacters] = LagCompensationComponent->ShotgunServerSideRewind(Request);
+			not TracedCharacters.IsEmpty())
 		{
-			if (FHitResult HitResult;
-				TraceHit(MuzzleTransform->GetLocation(), HitTarget, HitResult))
+			for (const auto& [Character, Results] : TracedCharacters)
 			{
-				ApplyDamage(HitResult.GetActor());
-				HitResults.Add(HitResult);
-			}
-			else
-			{
-				FHitResult MockHitResult;
-				MockHitResult.ImpactPoint = HitTarget;
-				MockHitResult.bBlockingHit = false;
-				HitResults.Add(MockHitResult);
+				for (const auto& [TracedHitBoxes] : Results.Results)
+				{
+					ApplyDamage(Character);
+					for (const auto& [Name, HitResult] : TracedHitBoxes)
+						NetMulticastSpawnFireEffects(HitResult);
+				}
 			}
 		}
-		NetMulticastFirePellets(HitResults);
 	}
 }
 

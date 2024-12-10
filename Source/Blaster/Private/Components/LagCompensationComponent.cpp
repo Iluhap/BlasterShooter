@@ -5,7 +5,6 @@
 
 #include "Character/BlasterCharacter.h"
 #include "Components/BoxComponent.h"
-#include "Weapon/Weapon.h"
 
 
 ULagCompensationComponent::ULagCompensationComponent()
@@ -90,12 +89,55 @@ FServerSideRewindResult ULagCompensationComponent::ServerSideRewind(const FServe
 	if (not IsValid(HitCharacter))
 		return {};
 
+	if (const auto& FrameToCheck = GetFrameToCheck(HitCharacter, HitTime);
+		FrameToCheck.IsSet())
+	{
+		return ConfirmHit(FrameToCheck.GetValue(), HitCharacter, TraceStart, HitLocation);
+	}
+	return {};
+}
+
+FShotgunServerSideRewindResult ULagCompensationComponent::ShotgunServerSideRewind(
+	const FShotgunServerSideRewindRequest& Request)
+{
+	const auto& [Requests] = Request;
+
+	FShotgunServerSideRewindResult Result {};
+
+	TMap<ABlasterCharacter*, FFramePackage> CharacterFrames;
+
+	for (const auto& [HitCharacter, TraceStart, HitLocation, HitTime] : Requests)
+	{
+		if (not CharacterFrames.Contains(HitCharacter))
+		{
+			if (const auto& Frame = GetFrameToCheck(HitCharacter, HitTime);
+				Frame.IsSet())
+			{
+				CharacterFrames.Add(HitCharacter, Frame.GetValue());
+			}
+		}
+		auto&& FrameToCheck = CharacterFrames[HitCharacter];
+		auto&& TmpResult = ConfirmHit(FrameToCheck, HitCharacter, TraceStart, HitLocation);
+
+		if (not Result.TracedCharacters.Contains(HitCharacter))
+		{
+			Result.TracedCharacters.Add(HitCharacter, {});
+		}
+		Result.TracedCharacters[HitCharacter].Results.Add(TmpResult);
+	}
+
+	return Result;
+}
+
+TOptional<FFramePackage> ULagCompensationComponent::GetFrameToCheck(const ABlasterCharacter* HitCharacter,
+                                                                    float HitTime) const
+{
 	if (const auto* LagCompensationComponent = HitCharacter->GetComponentByClass<ULagCompensationComponent>();
 		IsValid(LagCompensationComponent))
 	{
 		if (LagCompensationComponent->FrameHistory.GetHead() and LagCompensationComponent->FrameHistory.GetTail())
 		{
-			FFramePackage FrameToCheck;
+			TOptional<FFramePackage> FrameToCheck {};
 			const auto& History = LagCompensationComponent->FrameHistory;
 
 			bool bShouldInterpolateFrame = true;
@@ -142,8 +184,7 @@ FServerSideRewindResult ULagCompensationComponent::ServerSideRewind(const FServe
 				// Interpolate the position between Younger and Older frames
 				FrameToCheck = InterpBetweenFrames(OlderIter->GetValue(), YoungerIter->GetValue(), HitTime);
 			}
-
-			return ConfirmHit(FrameToCheck, HitCharacter, TraceStart, HitLocation);
+			return FrameToCheck;
 		}
 	}
 	return {};
@@ -178,7 +219,6 @@ FServerSideRewindResult ULagCompensationComponent::ConfirmHit(const FFramePackag
 		{
 			if (ConfirmHitResult.bBlockingHit)
 			{
-				DrawDebugSphere(GetWorld(), ConfirmHitResult.ImpactPoint, 10, 10, FColor::Orange, true);
 				Result.TracedHitBoxes.Add(Name, ConfirmHitResult);
 			}
 		}
@@ -207,7 +247,7 @@ float ULagCompensationComponent::GetHistoryLength() const
 
 FFramePackage ULagCompensationComponent::InterpBetweenFrames(const FFramePackage& Older,
                                                              const FFramePackage& Younger,
-                                                             float HitTime)
+                                                             float HitTime) const
 {
 	const float Distance = Younger.Time - Older.Time;
 	const float InterpFraction = FMath::Clamp((HitTime - Older.Time) / Distance, 0.f, 1.f);

@@ -93,7 +93,7 @@ public:
 
 protected:
 	UFUNCTION(Server, Reliable)
-	virtual void ServerFire(const FVector_NetQuantize& Start, const FVector_NetQuantize& HitTarget);
+	virtual void ServerFire(const FVector_NetQuantize& HitTarget);
 
 	UFUNCTION(NetMulticast, Unreliable)
 	virtual void NetMulticastFire(const FVector_NetQuantize& HitTarget);

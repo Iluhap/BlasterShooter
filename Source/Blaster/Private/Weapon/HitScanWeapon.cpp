@@ -83,11 +83,6 @@ void AHitScanWeapon::ServerHitConfirm_Implementation(const FServerSideRewindRequ
 	NetMulticastSpawnFireEffects(MockHitResult);
 }
 
-void AHitScanWeapon::ServerFire_Implementation(const FVector_NetQuantize& Start, const FVector_NetQuantize& HitTarget)
-{
-	Super::ServerFire_Implementation(Start, HitTarget);
-}
-
 void AHitScanWeapon::NetMulticastFire_Implementation(const FVector_NetQuantize& HitTarget)
 {
 	Super::NetMulticastFire_Implementation(HitTarget);

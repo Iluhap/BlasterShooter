@@ -44,6 +44,22 @@ struct FServerSideRewindResult
 };
 
 USTRUCT()
+struct FServerSideRewindResults
+{
+	GENERATED_BODY()
+	TArray<FServerSideRewindResult> Results;
+};
+
+USTRUCT()
+struct FShotgunServerSideRewindResult
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TMap<class ABlasterCharacter*, FServerSideRewindResults> TracedCharacters;
+};
+
+USTRUCT()
 struct FServerSideRewindRequest
 {
 	GENERATED_BODY()
@@ -59,6 +75,15 @@ struct FServerSideRewindRequest
 
 	UPROPERTY()
 	float HitTime;
+};
+
+USTRUCT()
+struct FShotgunServerSideRewindRequest
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TArray<FServerSideRewindRequest> Requests;
 };
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -81,6 +106,7 @@ public:
 	void ShowFramePackage(const FFramePackage& Package) const;
 
 	FServerSideRewindResult ServerSideRewind(const FServerSideRewindRequest& Request);
+	FShotgunServerSideRewindResult ShotgunServerSideRewind(const FShotgunServerSideRewindRequest& Request);
 
 	FServerSideRewindResult ConfirmHit(const FFramePackage& Package,
 	                                   ABlasterCharacter* HitCharacter,
@@ -90,13 +116,15 @@ public:
 private:
 	void AddFrameToHistory();
 	float GetHistoryLength() const;
-	FFramePackage InterpBetweenFrames(const FFramePackage& Older, const FFramePackage& Younger, float HitTime);
+	FFramePackage InterpBetweenFrames(const FFramePackage& Older, const FFramePackage& Younger, float HitTime) const;
 	void CacheBoxPosition(ABlasterCharacter* Character, FFramePackage& OutFramePackage);
 	void MoveBoxes(ABlasterCharacter* Character, const FFramePackage& TargetPackage);
 	void ResetHitBoxes(ABlasterCharacter* Character, const FFramePackage& TargetPackage);
 	void EnableCharacterMeshCollision(ABlasterCharacter* Character, ECollisionEnabled::Type CollisionEnabled) const;
 
 	void SaveFramePackage();
+
+	TOptional<FFramePackage> GetFrameToCheck(const ABlasterCharacter* HitCharacter, float HitTime) const;
 
 private:
 	TDoubleLinkedList<FFramePackage> FrameHistory;

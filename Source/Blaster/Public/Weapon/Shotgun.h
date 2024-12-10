@@ -28,7 +28,7 @@ protected:
 
 protected:
 	UFUNCTION(Server, Reliable)
-	virtual void ServerFirePellets(const TArray<FVector_NetQuantize>& HitTargets);
+	virtual void ServerConfirmPelletsHit(const struct FShotgunServerSideRewindRequest& Request);
 
 	UFUNCTION(NetMulticast, Reliable)
 	virtual void NetMulticastFirePellets(const TArray<FHitResult>& HitResults);

@@ -188,7 +188,7 @@ void AWeapon::Fire(const FVector& HitTarget)
 		const FVector End = bUseScatter ? ApplyScatterTo(Start, HitTarget) : HitTarget;
 
 		LocalFire(End);
-		ServerFire(Start, End);
+		ServerFire(End);
 	}
 }
 
@@ -200,7 +200,7 @@ void AWeapon::LocalFire(const FVector& HitTarget)
 		SpendRound();
 }
 
-void AWeapon::ServerFire_Implementation(const FVector_NetQuantize& Start, const FVector_NetQuantize& HitTarget)
+void AWeapon::ServerFire_Implementation(const FVector_NetQuantize& HitTarget)
 {
 	SpendRound();
 	NetMulticastFire(HitTarget);

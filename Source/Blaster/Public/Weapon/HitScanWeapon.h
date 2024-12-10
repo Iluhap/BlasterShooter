@@ -18,8 +18,6 @@ public:
 	virtual void Fire(const FVector& HitTarget) override;
 	virtual void LocalFire(const FVector& HitTarget) override;
 
-	virtual void ServerFire_Implementation(const FVector_NetQuantize& Start,
-	                                       const FVector_NetQuantize& HitTarget) override;
 	virtual void NetMulticastFire_Implementation(const FVector_NetQuantize& HitTarget) override;
 
 protected:

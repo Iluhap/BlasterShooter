@@ -27,26 +27,28 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 	Super::Fire(HitTarget);
 }
 
-void AProjectileWeapon::ServerFire_Implementation(const FVector_NetQuantize& Start,
-                                                  const FVector_NetQuantize& HitTarget)
+void AProjectileWeapon::ServerFire_Implementation(const FVector_NetQuantize& HitTarget)
 {
-	const FVector DirectionToTarget = HitTarget - Start;
-
-	if (IsValid(ProjectileClass))
+	if (const auto& Muzzle = GetMuzzleTransform())
 	{
-		FActorSpawnParameters Params;
-		Params.Owner = GetOwner();
-		Params.Instigator = Cast<APawn>(GetOwner());
+		const FVector Start = Muzzle->GetLocation();
+		const FVector DirectionToTarget = HitTarget - Start;
 
-		GetWorld()->SpawnActor<AProjectile>(
-			ProjectileClass,
-			Start,
-			DirectionToTarget.Rotation(),
-			Params
-		);
+		if (IsValid(ProjectileClass))
+		{
+			FActorSpawnParameters Params;
+			Params.Owner = GetOwner();
+			Params.Instigator = Cast<APawn>(GetOwner());
+
+			GetWorld()->SpawnActor<AProjectile>(
+				ProjectileClass,
+				Start,
+				DirectionToTarget.Rotation(),
+				Params
+			);
+		}
+		Super::ServerFire_Implementation(HitTarget);
 	}
-
-	Super::ServerFire_Implementation(Start, HitTarget);
 }
 
 void AProjectileWeapon::NetMulticastFire_Implementation(const FVector_NetQuantize& HitTarget)
