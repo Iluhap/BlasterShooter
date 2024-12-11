@@ -3,7 +3,9 @@
 
 #include "Weapon/ProjectileBullet.h"
 
-#include "GameFramework/Character.h"
+#include "Character/BlasterCharacter.h"
+#include "Character/BlasterPlayerController.h"
+#include "Components/LagCompensationComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -41,38 +43,32 @@ void AProjectileBullet::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
 
 #endif
 
-void AProjectileBullet::BeginPlay()
-{
-	Super::BeginPlay();
-
-	FPredictProjectilePathParams PathParams;
-
-	PathParams.bTraceWithChannel = true;
-	PathParams.bTraceWithCollision = true;
-	PathParams.DrawDebugTime = 5.f;
-	PathParams.DrawDebugType = EDrawDebugTrace::ForDuration;
-	PathParams.LaunchVelocity = GetActorForwardVector() * InitialSpeed;
-	PathParams.MaxSimTime = 4.f;
-	PathParams.ProjectileRadius = 5.f;
-	PathParams.SimFrequency = 30.f;
-	PathParams.StartLocation = GetActorLocation();
-	PathParams.ActorsToIgnore.Add(this);
-
-	FPredictProjectilePathResult PathResult;
-	UGameplayStatics::PredictProjectilePath(this, PathParams, PathResult);
-}
-
 void AProjectileBullet::OnHit(UPrimitiveComponent* HitComponent,
                               AActor* OtherActor, UPrimitiveComponent* OtherComp,
                               FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (const auto* OwnerCharacter = Cast<ACharacter>(GetOwner());
-		IsValid(OwnerCharacter))
+	if (ABlasterCharacter* HitCharacter = Cast<ABlasterCharacter>(OtherActor);
+		IsValid(HitCharacter)
+		and IsValid(OwnerCharacter) and IsValid(OwnerController))
 	{
-		if (auto* OwnerController = OwnerCharacter->GetController();
-			IsValid(OwnerController))
+		if (OwnerCharacter->HasAuthority() and not bUseServerSideRewind)
 		{
 			UGameplayStatics::ApplyDamage(OtherActor, Damage, OwnerController, this, UDamageType::StaticClass());
+			Super::OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
+			return;
+		}
+		if (bUseServerSideRewind and OwnerCharacter->IsLocallyControlled())
+		{
+			FProjectileRewindRequest Request = {
+				.Base = {
+					.HitCharacter = HitCharacter,
+					.TraceStart = TraceStart,
+					.HitTime = OwnerController->GetServerTime() - OwnerController->GetNetTripTime()
+				},
+				.InitialVelocity = InitialVelocity
+			};
+
+			ConfirmHit(Request);
 		}
 	}
 

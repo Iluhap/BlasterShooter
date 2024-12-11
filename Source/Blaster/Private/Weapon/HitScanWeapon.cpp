@@ -45,42 +45,44 @@ void AHitScanWeapon::LocalFire(const FVector& HitTarget)
 			if (auto* BlasterCharacter = Cast<ABlasterCharacter>(HitResult.GetActor());
 				IsValid(BlasterCharacter))
 			{
-				ServerHitConfirm({
-					.HitCharacter = BlasterCharacter,
-					.TraceStart = Start,
+				ServerConfirmHit({
+					.Base = {
+						.HitCharacter = BlasterCharacter,
+						.TraceStart = Start,
+						.HitTime = OwningBlasterPlayerController->GetServerTime()
+					},
 					.HitLocation = HitResult.ImpactPoint,
-					.HitTime = OwningBlasterPlayerController->GetServerTime()
 				});
 			}
 		}
 	}
 }
 
-void AHitScanWeapon::ServerHitConfirm_Implementation(const FServerSideRewindRequest& Request)
+void AHitScanWeapon::ServerConfirmHit_Implementation(const FHitScanRewindRequest& Request)
 {
-	if (not IsValid(OwningBlasterCharacter))
-		return;
-
-	if (auto* LagCompensationComponent = OwningBlasterCharacter->FindComponentByClass<ULagCompensationComponent>();
-		IsValid(LagCompensationComponent))
+	if (auto* LagCompensationComponent = GetLagCompensationComponent())
 	{
-		if (const auto& [TracedHitBoxes] = LagCompensationComponent->ServerSideRewind(Request);
-			not TracedHitBoxes.IsEmpty())
-		{
-			if (IsValid(Request.HitCharacter))
-			{
-				ApplyDamage(Request.HitCharacter);
-			}
-			for (const auto& [Name, HitResult] : TracedHitBoxes)
-			{
-				NetMulticastSpawnFireEffects(HitResult);
-			}
-		}
+		LagCompensationComponent->ServerConfirmHitScan(Request);
 	}
+
 	FHitResult MockHitResult;
 	MockHitResult.ImpactPoint = Request.HitLocation;
 	MockHitResult.bBlockingHit = false;
 	NetMulticastSpawnFireEffects(MockHitResult);
+}
+
+void AHitScanWeapon::OnHitConfirmed(ABlasterCharacter* HitCharacter, const FRewindResult& Result)
+{
+	Super::OnHitConfirmed(HitCharacter, Result);
+
+	if (const auto& [TracedHitBoxes] = Result;
+		not TracedHitBoxes.IsEmpty())
+	{
+		for (const auto& [Name, HitResult] : TracedHitBoxes)
+		{
+			NetMulticastSpawnFireEffects(HitResult);
+		}
+	}
 }
 
 void AHitScanWeapon::NetMulticastFire_Implementation(const FVector_NetQuantize& HitTarget)
@@ -182,27 +184,5 @@ void AHitScanWeapon::SpawnFireEffects(const FHitResult& HitResult) const
 	{
 		SpawnImpactParticles(HitResult.ImpactPoint);
 		SpawnHitSound(HitResult.ImpactPoint);
-	}
-}
-
-void AHitScanWeapon::ApplyDamage(AActor* DamagedActor) const
-{
-	const APawn* OwnerPawn = Cast<APawn>(GetOwner());
-	if (not IsValid(OwnerPawn))
-		return;
-
-	AController* InstigatorController = OwnerPawn->GetController();
-	if (not(IsValid(InstigatorController) and HasAuthority()))
-		return;
-
-	if (auto* BlasterCharacter = Cast<ABlasterCharacter>(DamagedActor);
-		IsValid(BlasterCharacter))
-	{
-		UGameplayStatics::ApplyDamage(
-			BlasterCharacter,
-			Damage,
-			InstigatorController,
-			GetOwner(),
-			UDamageType::StaticClass());
 	}
 }

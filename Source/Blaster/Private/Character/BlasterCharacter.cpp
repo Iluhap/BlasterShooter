@@ -89,99 +89,92 @@ void ABlasterCharacter::InitHitBoxes()
 {
 	Head = CreateDefaultSubobject<UBoxComponent>("Head");
 	Head->SetupAttachment(GetMesh(), FName("head"));
-	Head->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	HitBoxes.Add(FName { "Head" }, Head);
 
 	Pelvis = CreateDefaultSubobject<UBoxComponent>("Pelvis");
 	Pelvis->SetupAttachment(GetMesh(), FName("pelvis"));
-	Pelvis->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	HitBoxes.Add(FName { "Pelvis" }, Pelvis);
 
 	Spine_02 = CreateDefaultSubobject<UBoxComponent>("Spine_02");
 	Spine_02->SetupAttachment(GetMesh(), FName("spine_02"));
-	Spine_02->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	HitBoxes.Add(FName { "Spine_02" }, Spine_02);
 
 	Spine_03 = CreateDefaultSubobject<UBoxComponent>("Spine_03");
 	Spine_03->SetupAttachment(GetMesh(), FName("spine_03"));
-	Spine_03->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	HitBoxes.Add(FName { "Spine_03" }, Spine_03);
 
 	UpperArm_L = CreateDefaultSubobject<UBoxComponent>("UpperArm_L");
 	UpperArm_L->SetupAttachment(GetMesh(), FName("upperarm_l"));
-	UpperArm_L->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	HitBoxes.Add(FName { "UpperArm_L" }, UpperArm_L);
 
 	UpperArm_R = CreateDefaultSubobject<UBoxComponent>("UpperArm_R");
 	UpperArm_R->SetupAttachment(GetMesh(), FName("upperarm_r"));
-	UpperArm_R->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	HitBoxes.Add(FName { "UpperArm_R" }, UpperArm_R);
 
 	LowerArm_L = CreateDefaultSubobject<UBoxComponent>("LowerArm_L");
 	LowerArm_L->SetupAttachment(GetMesh(), FName("lowerarm_l"));
-	LowerArm_L->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	HitBoxes.Add(FName { "LowerArm_L" }, LowerArm_L);
 
 	LowerArm_R = CreateDefaultSubobject<UBoxComponent>("LowerArm_R");
 	LowerArm_R->SetupAttachment(GetMesh(), FName("lowerarm_r"));
-	LowerArm_R->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	HitBoxes.Add(FName { "LowerArm_R" }, LowerArm_R);
 
 	Hand_L = CreateDefaultSubobject<UBoxComponent>("Hand_L");
 	Hand_L->SetupAttachment(GetMesh(), FName("hand_l"));
-	Hand_L->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	HitBoxes.Add(FName { "Hand_L" }, Hand_L);
 
 	Hand_R = CreateDefaultSubobject<UBoxComponent>("Hand_R");
 	Hand_R->SetupAttachment(GetMesh(), FName("hand_r"));
-	Hand_R->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
 	HitBoxes.Add(FName { "Hand_R" }, Hand_R);
 
 	Thigh_L = CreateDefaultSubobject<UBoxComponent>("Thigh_L");
 	Thigh_L->SetupAttachment(GetMesh(), FName("thigh_l"));
-	Thigh_L->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	HitBoxes.Add(FName { "Thigh_L" }, Thigh_L);
 
 	Thigh_R = CreateDefaultSubobject<UBoxComponent>("Thigh_R");
 	Thigh_R->SetupAttachment(GetMesh(), FName("thigh_r"));
-	Thigh_R->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	HitBoxes.Add(FName { "Thigh_R" }, Thigh_R);
 
 	Calf_L = CreateDefaultSubobject<UBoxComponent>("Calf_L");
 	Calf_L->SetupAttachment(GetMesh(), FName("calf_l"));
-	Calf_L->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	HitBoxes.Add(FName { "Calf_L" }, Calf_L);
 
 	Calf_R = CreateDefaultSubobject<UBoxComponent>("Calf_R");
 	Calf_R->SetupAttachment(GetMesh(), FName("calf_r"));
-	Calf_R->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	HitBoxes.Add(FName { "Calf_R" }, Calf_R);
 
 	Foot_L = CreateDefaultSubobject<UBoxComponent>("Foot_L");
 	Foot_L->SetupAttachment(GetMesh(), FName("foot_l"));
-	Foot_L->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
 	HitBoxes.Add(FName { "Foot_L" }, Foot_L);
 
 	Foot_R = CreateDefaultSubobject<UBoxComponent>("Foot_R");
 	Foot_R->SetupAttachment(GetMesh(), FName("foot_r"));
-	Foot_R->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	HitBoxes.Add(FName { "Foot_R" }, Foot_R);
+
+	for (auto& [_, HitBox] : HitBoxes)
+	{
+		if (IsValid(HitBox))
+		{
+			HitBox->SetCollisionObjectType(ECC_HitBox);
+			HitBox->SetCollisionResponseToAllChannels(ECR_Ignore);
+			HitBox->SetCollisionResponseToChannel(ECC_HitBox, ECR_Block);
+			HitBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+	}
 }
 
 void ABlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

@@ -9,9 +9,12 @@
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "Weapon/AmmoCasing.h"
+#include "BlasterTypes/LagCompensationTypes.h"
+#include "Components/LagCompensationComponent.h"
 
 
 AWeapon::AWeapon()
@@ -148,6 +151,8 @@ void AWeapon::OnEquipped()
 	AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	SetMeshCollision(false);
 	EnableCustomDepth(false);
+
+	SubscribeOnHitConfirmed();
 }
 
 void AWeapon::OnEquippedSecondary()
@@ -157,6 +162,8 @@ void AWeapon::OnEquippedSecondary()
 	SetMeshCollision(false);
 	EnableCustomDepth(true);
 	SetMeshOutlineColor(CUSTOM_DEPTH_TAN);
+
+	UnsubscribeOnHitConfirmed();
 }
 
 void AWeapon::OnDropped()
@@ -172,6 +179,32 @@ void AWeapon::OnDropped()
 
 	SetMeshOutlineColor(CUSTOM_DEPTH_BLUE);
 	EnableCustomDepth(true);
+
+	UnsubscribeOnHitConfirmed();
+}
+
+void AWeapon::SubscribeOnHitConfirmed()
+{
+	if (HasAuthority())
+	{
+		if (auto* LagCompensation = GetLagCompensationComponent();
+			IsValid(LagCompensation))
+		{
+			LagCompensation->OnHitConfirmed.AddUniqueDynamic(this, &AWeapon::OnHitConfirmed);
+		}
+	}
+}
+
+void AWeapon::UnsubscribeOnHitConfirmed()
+{
+	if (HasAuthority())
+	{
+		if (auto* LagCompensation = GetLagCompensationComponent();
+			IsValid(LagCompensation))
+		{
+			LagCompensation->OnHitConfirmed.RemoveDynamic(this, &AWeapon::OnHitConfirmed);
+		}
+	}
 }
 
 void AWeapon::SetDestroyOnDrop(bool bDestroy)
@@ -301,6 +334,15 @@ void AWeapon::ClientAddAmmo_Implementation(int32 AmmoToAdd)
 		}
 	}
 	UpdateHUDAmmo();
+}
+
+void AWeapon::OnHitConfirmed(ABlasterCharacter* HitCharacter, const FRewindResult& Result)
+{
+	if (const auto& [TracedHitBoxes] = Result;
+		not TracedHitBoxes.IsEmpty())
+	{
+		ApplyDamage(HitCharacter);
+	}
 }
 
 void AWeapon::PlayFireAnimation() const
@@ -436,8 +478,46 @@ void AWeapon::SetOwningController()
 		                                : OwningBlasterPlayerController;
 }
 
+void AWeapon::SetOwner(AActor* NewOwner)
+{
+	Super::SetOwner(NewOwner);
+}
+
 void AWeapon::OnFireEffects() const
 {
 	PlayFireAnimation();
 	EjectCasing();
+}
+
+void AWeapon::ApplyDamage(AActor* DamagedActor) const
+{
+	const APawn* OwnerPawn = Cast<APawn>(GetOwner());
+	if (not IsValid(OwnerPawn))
+		return;
+
+	AController* InstigatorController = OwnerPawn->GetController();
+	if (not(IsValid(InstigatorController) and HasAuthority()))
+		return;
+
+	if (auto* BlasterCharacter = Cast<ABlasterCharacter>(DamagedActor);
+		IsValid(BlasterCharacter))
+	{
+		UGameplayStatics::ApplyDamage(
+			BlasterCharacter,
+			Damage,
+			InstigatorController,
+			GetOwner(),
+			UDamageType::StaticClass());
+	}
+}
+
+ULagCompensationComponent* AWeapon::GetLagCompensationComponent()
+{
+	SetOwningCharacter();
+
+	if (OwningBlasterCharacter)
+	{
+		return OwningBlasterCharacter->FindComponentByClass<ULagCompensationComponent>();
+	}
+	return nullptr;
 }

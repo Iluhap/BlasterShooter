@@ -14,20 +14,20 @@ class BLASTER_API AProjectileWeapon : public AWeapon
 public:
 	AProjectileWeapon();
 
-protected:
-	virtual void BeginPlay() override;
-
-public:
-	virtual void Tick(float DeltaTime) override;
-
 public:
 	virtual void Fire(const FVector& HitTarget) override;
 
 public:
 	virtual void ServerFire_Implementation(const FVector_NetQuantize& HitTarget) override;
-	virtual void NetMulticastFire_Implementation(const FVector_NetQuantize& HitTarget) override;
+
+private:
+	class AProjectile* SpawnProjectile(const TSubclassOf<AProjectile>& Class,
+	                                   const FVector_NetQuantize& HitTarget) const;
 
 private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AProjectile> ProjectileClass;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AProjectile> ServerSideRewindProjectileClass;
 };

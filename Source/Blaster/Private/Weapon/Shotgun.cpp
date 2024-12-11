@@ -46,7 +46,7 @@ void AShotgun::LocalFirePellets(const TArray<FVector_NetQuantize>& HitTargets)
 	if (const auto MuzzleTransform = GetMuzzleTransform();
 		MuzzleTransform.IsSet())
 	{
-		FShotgunServerSideRewindRequest Request;
+		FShotgunRewindRequest Request;
 		for (auto& HitPoint : HitTargets)
 		{
 			SpawnBeamParticles(MuzzleTransform.GetValue(), HitPoint);
@@ -58,10 +58,12 @@ void AShotgun::LocalFirePellets(const TArray<FVector_NetQuantize>& HitTargets)
 					IsValid(BlasterCharacter))
 				{
 					Request.Requests.Add({
-						.HitCharacter = BlasterCharacter,
-						.TraceStart = MuzzleTransform->GetLocation(),
+						.Base = {
+							.HitCharacter = BlasterCharacter,
+							.TraceStart = MuzzleTransform->GetLocation(),
+							.HitTime = OwningBlasterPlayerController->GetServerTime()
+						},
 						.HitLocation = HitResult.ImpactPoint,
-						.HitTime = OwningBlasterPlayerController->GetServerTime()
 					});
 				}
 			}
@@ -70,26 +72,69 @@ void AShotgun::LocalFirePellets(const TArray<FVector_NetQuantize>& HitTargets)
 	}
 }
 
-void AShotgun::ServerConfirmPelletsHit_Implementation(const FShotgunServerSideRewindRequest& Request)
+void AShotgun::OnEquipped()
 {
-	if (not IsValid(OwningBlasterCharacter))
-		return;
+	Super::OnEquipped();
+	SubscribeOnShotgunHitConfirmed();
+}
 
-	if (auto* LagCompensationComponent = OwningBlasterCharacter->FindComponentByClass<ULagCompensationComponent>();
-		IsValid(LagCompensationComponent))
+void AShotgun::OnEquippedSecondary()
+{
+	Super::OnEquippedSecondary();
+	UnsubscribeOnHitConfirmed();
+}
+
+void AShotgun::OnDropped()
+{
+	Super::OnDropped();
+	UnsubscribeOnHitConfirmed();
+}
+
+void AShotgun::ServerConfirmPelletsHit_Implementation(const FShotgunRewindRequest& Request)
+{
+	if (auto* LagCompensationComponent = GetLagCompensationComponent())
 	{
-		if (const auto& [TracedCharacters] = LagCompensationComponent->ShotgunServerSideRewind(Request);
-			not TracedCharacters.IsEmpty())
+		LagCompensationComponent->ServerConfirmShotgunHit(Request);
+	}
+}
+
+void AShotgun::OnShotgunHitConfirmed(const FShotgunRewindResult& Result)
+{
+	if (const auto& [TracedCharacters] = Result;
+		not TracedCharacters.IsEmpty())
+	{
+		for (const auto& [Character, Results] : TracedCharacters)
 		{
-			for (const auto& [Character, Results] : TracedCharacters)
+			for (const auto& [TracedHitBoxes] : Results.Results)
 			{
-				for (const auto& [TracedHitBoxes] : Results.Results)
-				{
-					ApplyDamage(Character);
-					for (const auto& [Name, HitResult] : TracedHitBoxes)
-						NetMulticastSpawnFireEffects(HitResult);
-				}
+				ApplyDamage(Character);
+				for (const auto& [Name, HitResult] : TracedHitBoxes)
+					NetMulticastSpawnFireEffects(HitResult);
 			}
+		}
+	}
+}
+
+void AShotgun::SubscribeOnShotgunHitConfirmed()
+{
+	if (HasAuthority())
+	{
+		if (auto* LagCompensation = GetLagCompensationComponent();
+			IsValid(LagCompensation))
+		{
+			LagCompensation->OnShotgunHitConfirmed.AddUniqueDynamic(this, &AShotgun::OnShotgunHitConfirmed);
+		}
+	}
+}
+
+void AShotgun::UnsubscribeOnShotgunHitConfirmed()
+{
+	if (HasAuthority())
+	{
+		if (auto* LagCompensation = GetLagCompensationComponent();
+			IsValid(LagCompensation))
+		{
+			LagCompensation->OnShotgunHitConfirmed.RemoveDynamic(this, &AShotgun::OnShotgunHitConfirmed);
 		}
 	}
 }

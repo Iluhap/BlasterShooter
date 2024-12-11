@@ -22,9 +22,8 @@ public:
 
 protected:
 	UFUNCTION(Server, Reliable)
-	virtual void ServerHitConfirm(const struct FServerSideRewindRequest& Request);
+	virtual void ServerConfirmHit(const struct FHitScanRewindRequest& Request);
 
-protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastSpawnFireEffects(const FHitResult& HitResult);
 
@@ -36,12 +35,11 @@ protected:
 	virtual void SpawnFireEffects(const FHitResult& HitResult) const;
 
 	bool TraceHit(const FVector& Start, const FVector& HitTarget, FHitResult& HitResult) const;
-	void ApplyDamage(AActor* DamagedActor) const;
 
 private:
-	UPROPERTY(EditAnywhere)
-	float Damage;
+	virtual void OnHitConfirmed(class ABlasterCharacter* HitCharacter, const FRewindResult& Result) override;
 
+private:
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UParticleSystem> ImpactParticles;
 
@@ -56,7 +54,4 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<USoundCue> HitSound;
-
-	UPROPERTY(EditAnywhere)
-	bool bUseServerSideRewind;
 };

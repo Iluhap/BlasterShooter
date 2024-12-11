@@ -37,8 +37,22 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 protected:
+	virtual void ConfirmHit(const struct FProjectileRewindRequest& Request);
+
+protected:
 	void SpawnTrailSystem();
 	void HideProjectile();
+
+public:
+	float Damage;
+
+	// Used with Server-Side Rewind
+	bool bUseServerSideRewind = false;
+	FVector_NetQuantize TraceStart;
+	FVector_NetQuantize100 InitialVelocity;
+
+	UPROPERTY(EditAnywhere)
+	float InitialSpeed;
 
 protected:
 	UPROPERTY(EditAnywhere)
@@ -56,11 +70,9 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> ProjectileMesh;
 
-	UPROPERTY(EditAnywhere, Category=Damage)
-	float Damage;
-
-	UPROPERTY(EditAnywhere)
-	float InitialSpeed;
+protected:
+	class ABlasterCharacter* OwnerCharacter;
+	class ABlasterPlayerController* OwnerController;
 
 private:
 	UPROPERTY(EditAnywhere, Category=Damage)

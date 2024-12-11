@@ -10,6 +10,9 @@
 #include "Blaster/Blaster.h"
 #include "NiagaraComponent.h"
 #include "NiagaraSystemInstanceController.h"
+#include "Character/BlasterCharacter.h"
+#include "Character/BlasterPlayerController.h"
+#include "Components/LagCompensationComponent.h"
 
 
 AProjectile::AProjectile()
@@ -35,7 +38,10 @@ AProjectile::AProjectile()
 	RadialDamageInnerRadius = 200.f;
 	RadialDamageOuterRadius = 500.f;
 
-	InitialSpeed = 1000;
+	InitialSpeed = 10000;
+
+	OwnerCharacter = nullptr;
+	OwnerController = nullptr;
 }
 
 void AProjectile::Destroyed()
@@ -48,6 +54,10 @@ void AProjectile::Destroyed()
 void AProjectile::BeginPlay()
 {
 	Super::BeginPlay();
+
+	OwnerCharacter = Cast<ABlasterCharacter>(GetOwner());
+	if (OwnerCharacter)
+		OwnerController = Cast<ABlasterPlayerController>(OwnerCharacter->Controller);
 
 	if (IsValid(Tracer))
 	{
@@ -132,6 +142,18 @@ void AProjectile::ExplodeDamage()
 void AProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+void AProjectile::ConfirmHit(const FProjectileRewindRequest& Request)
+{
+	if (not IsValid(OwnerCharacter))
+		return;
+
+	if (auto* LagCompensationComponent = OwnerCharacter->FindComponentByClass<ULagCompensationComponent>();
+		IsValid(LagCompensationComponent))
+	{
+		LagCompensationComponent->ServerConfirmProjectileHit(Request);
+	}
 }
 
 void AProjectile::SpawnTrailSystem()

@@ -40,11 +40,6 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	virtual void OnWeaponStateSet();
-	virtual void OnEquipped();
-	virtual void OnEquippedSecondary();
-	virtual void OnDropped();
-
 public:
 	virtual void Tick(float DeltaTime) override;
 
@@ -105,19 +100,31 @@ protected:
 	void ClientAddAmmo(int32 ServerAmmo);
 
 protected:
+	UFUNCTION()
+	virtual void OnHitConfirmed(class ABlasterCharacter* HitCharacter, const FRewindResult& Result);
+
+protected:
+	virtual void OnWeaponStateSet();
+	virtual void OnEquipped();
+	virtual void OnEquippedSecondary();
+	virtual void OnDropped();
+
+	void SubscribeOnHitConfirmed();
+	void UnsubscribeOnHitConfirmed();
+
+protected:
 	void PlayFireAnimation() const;
 	void EjectCasing() const;
-
 	virtual FVector ApplyScatterTo(const FVector& TraceStart, const FVector& HitTarget) const;
-
 	void SpendRound();
-
 	void OnFireEffects() const;
+	void ApplyDamage(AActor* DamagedActor) const;
+
+	class ULagCompensationComponent* GetLagCompensationComponent();
 
 protected:
 	virtual void OnRep_Owner() override;
 
-private:
 	UFUNCTION()
 	void OnRep_State();
 
@@ -127,6 +134,8 @@ private:
 	void SetOwningController();
 
 public:
+	virtual void SetOwner(AActor* NewOwner) override;
+
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<USoundCue> EquipSound;
 
@@ -154,6 +163,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category= "Weapon Properties")
 	FName MuzzleFlashSocketName;
+
+	UPROPERTY(EditAnywhere, Category= "Weapon Properties")
+	float Damage;
+
+	UPROPERTY(EditAnywhere)
+	bool bUseServerSideRewind;
 
 	/*
 	* Trace with scatter

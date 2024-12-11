@@ -169,17 +169,17 @@ void UCombatComponent::SwapWeapons()
 
 	std::swap(EquippedWeapon, SecondaryWeapon);
 
+	EquippedWeapon->SetOwner(Character);
 	EquippedWeapon->SetState(EWeaponState::EWS_Equipped);
 	AttachActorToSocket(EquippedWeapon, RightHandSocket);
-	EquippedWeapon->SetOwner(Character);
 	EquippedWeapon->UpdateHUDAmmo();
 	UpdateActiveCarriedAmmo();
 	PlayEquipSound(EquippedWeapon);
 	ReloadEmptyWeapon();
 
+	SecondaryWeapon->SetOwner(Character);
 	SecondaryWeapon->SetState(EWeaponState::EWS_Equipped_Secondary);
 	AttachActorToSocket(SecondaryWeapon, SecondaryWeaponSocket);
-	SecondaryWeapon->SetOwner(Character);
 }
 
 void UCombatComponent::EquipPrimaryWeapon(AWeapon* WeaponToEquip)
@@ -190,11 +190,9 @@ void UCombatComponent::EquipPrimaryWeapon(AWeapon* WeaponToEquip)
 	DropWeapon(EquippedWeapon);
 
 	EquippedWeapon = WeaponToEquip;
-	EquippedWeapon->SetState(EWeaponState::EWS_Equipped);
-
-	AttachActorToSocket(EquippedWeapon, RightHandSocket);
-
 	EquippedWeapon->SetOwner(Character);
+	EquippedWeapon->SetState(EWeaponState::EWS_Equipped);
+	AttachActorToSocket(EquippedWeapon, RightHandSocket);
 	EquippedWeapon->UpdateHUDAmmo();
 
 	UpdateActiveCarriedAmmo();
