@@ -125,7 +125,8 @@ void UBlasterAnimInstance::UpdateCombatComponentVariables()
 		bUseFABRIK = CombatState == ECombatState::ECS_Unoccupied;
 
 		if (BlasterCharacter->IsLocallyControlled()
-			and CombatState != ECombatState::ECS_ThrowingGrenade)
+			and CombatState != ECombatState::ECS_ThrowingGrenade
+			and CombatState != ECombatState::ECS_SwapingWeapon)
 		{
 			bUseFABRIK = not CombatComponent->IsLocallyReloading();
 		}

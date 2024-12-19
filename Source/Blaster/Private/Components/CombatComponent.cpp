@@ -146,12 +146,16 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	if (CombatState != ECombatState::ECS_Unoccupied)
 		return;
 
+	if (IsValid(Character))
+		WeaponToEquip->SetOwner(Character);
+
 	if (IsValid(EquippedWeapon) and not IsValid(SecondaryWeapon))
 	{
 		EquipSecondaryWeapon(WeaponToEquip);
 	}
 	else
 	{
+		DropWeapon(EquippedWeapon);
 		EquipPrimaryWeapon(WeaponToEquip);
 	}
 
@@ -169,17 +173,22 @@ void UCombatComponent::SwapWeapons()
 
 	std::swap(EquippedWeapon, SecondaryWeapon);
 
-	EquippedWeapon->SetOwner(Character);
-	EquippedWeapon->SetState(EWeaponState::EWS_Equipped);
-	AttachActorToSocket(EquippedWeapon, RightHandSocket);
-	EquippedWeapon->UpdateHUDAmmo();
-	UpdateActiveCarriedAmmo();
-	PlayEquipSound(EquippedWeapon);
-	ReloadEmptyWeapon();
+	Character->PlaySwapWeaponMontage();
+	CombatState = ECombatState::ECS_SwapingWeapon;
+}
 
-	SecondaryWeapon->SetOwner(Character);
-	SecondaryWeapon->SetState(EWeaponState::EWS_Equipped_Secondary);
-	AttachActorToSocket(SecondaryWeapon, SecondaryWeaponSocket);
+void UCombatComponent::FinishWeaponSwap()
+{
+	if (IsValid(Character) and Character->HasAuthority())
+	{
+		CombatState = ECombatState::ECS_Unoccupied;
+	}
+}
+
+void UCombatComponent::FinishSwapAttachedWeapons()
+{
+	UpdatePrimaryWeapon();
+	UpdateSecondaryWeapon();
 }
 
 void UCombatComponent::EquipPrimaryWeapon(AWeapon* WeaponToEquip)
@@ -187,16 +196,22 @@ void UCombatComponent::EquipPrimaryWeapon(AWeapon* WeaponToEquip)
 	if (not IsValid(WeaponToEquip))
 		return;
 
-	DropWeapon(EquippedWeapon);
-
 	EquippedWeapon = WeaponToEquip;
-	EquippedWeapon->SetOwner(Character);
+
+	UpdatePrimaryWeapon();
+}
+
+void UCombatComponent::UpdatePrimaryWeapon()
+{
+	if (not IsValid(EquippedWeapon))
+		return;
+
 	EquippedWeapon->SetState(EWeaponState::EWS_Equipped);
 	AttachActorToSocket(EquippedWeapon, RightHandSocket);
 	EquippedWeapon->UpdateHUDAmmo();
 
 	UpdateActiveCarriedAmmo();
-	PlayEquipSound(WeaponToEquip);
+	PlayEquipSound(EquippedWeapon);
 	ReloadEmptyWeapon();
 }
 
@@ -206,11 +221,19 @@ void UCombatComponent::EquipSecondaryWeapon(AWeapon* WeaponToEquip)
 		return;
 
 	SecondaryWeapon = WeaponToEquip;
+
+	UpdateSecondaryWeapon();
+}
+
+void UCombatComponent::UpdateSecondaryWeapon()
+{
+	if (not IsValid(SecondaryWeapon))
+		return;
+
 	SecondaryWeapon->SetState(EWeaponState::EWS_Equipped_Secondary);
 
 	AttachActorToSocket(SecondaryWeapon, SecondaryWeaponSocket);
-	SecondaryWeapon->SetOwner(Character);
-	PlayEquipSound(WeaponToEquip);
+	PlayEquipSound(SecondaryWeapon);
 }
 
 void UCombatComponent::SpawnDefaultWeapon()
@@ -524,14 +547,14 @@ bool UCombatComponent::CanFire() const
 	if (not IsValid(EquippedWeapon))
 		return false;
 
-	if (bLocalReloading)
-		return false;
-
 	if (not EquippedWeapon->IsEmpty()
 		and bCanFire
 		and CombatState == ECombatState::ECS_Reloading
 		and EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun)
 		return true;
+
+	if (bLocalReloading)
+		return false;
 
 	return not EquippedWeapon->IsEmpty()
 		and bCanFire
@@ -926,6 +949,14 @@ void UCombatComponent::OnRep_CombatState()
 				Character->PlayThrowGrenadeMontage();
 				AttachActorToSocket(EquippedWeapon, LeftHandSocket);
 				ShowAttachedGrenade(true);
+			}
+			break;
+		}
+	case ECombatState::ECS_SwapingWeapon:
+		{
+			if (IsValid(Character) and not Character->IsLocallyControlled())
+			{
+				Character->PlaySwapWeaponMontage();
 			}
 			break;
 		}

@@ -389,6 +389,15 @@ void ABlasterCharacter::PlayThrowGrenadeMontage() const
 	}
 }
 
+void ABlasterCharacter::PlaySwapWeaponMontage() const
+{
+	if (auto* AnimInstance = GetMesh()->GetAnimInstance();
+		IsValid(AnimInstance) and IsValid(SwapWeaponMontage))
+	{
+		AnimInstance->Montage_Play(SwapWeaponMontage);
+	}
+}
+
 void ABlasterCharacter::Eliminate()
 {
 	if (IsValid(Combat) and Combat->IsWeaponEquipped())
@@ -738,6 +747,8 @@ void ABlasterCharacter::ThrowGrenade()
 
 void ABlasterCharacter::SwapWeapons()
 {
+	PlaySwapWeaponMontage();
+
 	ServerSwapWeapons();
 }
 

@@ -46,6 +46,12 @@ public:
 	void FinishReloading();
 
 	UFUNCTION(BlueprintCallable)
+	void FinishWeaponSwap();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishSwapAttachedWeapons();
+	
+	UFUNCTION(BlueprintCallable)
 	void ShotgunShellReload();
 
 	void JumpToShotgunEnd();
@@ -127,7 +133,10 @@ private:
 	void ShowAttachedGrenade(bool bVisible);
 
 	void EquipPrimaryWeapon(AWeapon* WeaponToEquip);
+	void UpdatePrimaryWeapon();
+	
 	void EquipSecondaryWeapon(AWeapon* WeaponToEquip);
+	void UpdateSecondaryWeapon();
 
 	void SetAimingImpl(bool bIsAiming);
 

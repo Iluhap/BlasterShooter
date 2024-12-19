@@ -32,6 +32,7 @@ public:
 	void PlayReloadMontage() const;
 	void PlayEliminationMontage() const;
 	void PlayThrowGrenadeMontage() const;
+	void PlaySwapWeaponMontage() const;
 
 	void Eliminate();
 
@@ -180,6 +181,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	TObjectPtr<UAnimMontage> ThrowGrenadeMontage;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	TObjectPtr<UAnimMontage> SwapWeaponMontage;
 
 private:
 	UPROPERTY()
