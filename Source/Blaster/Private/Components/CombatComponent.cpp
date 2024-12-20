@@ -174,7 +174,7 @@ void UCombatComponent::SwapWeapons()
 	std::swap(EquippedWeapon, SecondaryWeapon);
 
 	Character->PlaySwapWeaponMontage();
-	CombatState = ECombatState::ECS_SwapingWeapon;
+	CombatState = ECombatState::ECS_SwappingWeapon;
 }
 
 void UCombatComponent::FinishWeaponSwap()
@@ -952,7 +952,7 @@ void UCombatComponent::OnRep_CombatState()
 			}
 			break;
 		}
-	case ECombatState::ECS_SwapingWeapon:
+	case ECombatState::ECS_SwappingWeapon:
 		{
 			if (IsValid(Character) and not Character->IsLocallyControlled())
 			{
