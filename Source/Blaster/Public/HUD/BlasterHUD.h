@@ -69,6 +69,9 @@ private:
 	TSubclassOf<UUserWidget> AnnouncementClass;
 
 public:
+	UPROPERTY()
 	TObjectPtr<class UCharacterOverlay> CharacterOverlay;
+
+	UPROPERTY()
 	TObjectPtr<class UAnnouncement> Announcement;
 };

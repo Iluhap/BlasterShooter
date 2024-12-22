@@ -509,12 +509,13 @@ void ABlasterPlayerController::SetShieldVisibility(ESlateVisibility Visibility)
 {
 	SetHUD();
 
-	if (IsHUDValid()
-		and BlasterHUD->CharacterOverlay->ShieldBar
-		and BlasterHUD->CharacterOverlay->ShieldText)
+	if (IsHUDValid())
 	{
-		BlasterHUD->CharacterOverlay->ShieldBar->SetVisibility(Visibility);
-		BlasterHUD->CharacterOverlay->ShieldText->SetVisibility(Visibility);
+		if (IsValid(BlasterHUD->CharacterOverlay->ShieldBar))
+			BlasterHUD->CharacterOverlay->ShieldBar->SetVisibility(Visibility);
+
+		if (IsValid(BlasterHUD->CharacterOverlay->ShieldText))
+			BlasterHUD->CharacterOverlay->ShieldText->SetVisibility(Visibility);
 	}
 }
 
