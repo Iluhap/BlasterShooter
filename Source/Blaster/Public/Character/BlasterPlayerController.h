@@ -31,6 +31,8 @@ public:
 	void SetHUDMatchCountdown(float CountdownTime);
 	void SetHUDAnnouncementCountdown(float CountdownTime);
 
+	void ShowReturnToMainMenu();
+
 	virtual float GetServerTime();
 	virtual void ReceivedPlayer() override; // Sync server time with Client
 
@@ -57,6 +59,8 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* PawnToPossess) override;
+
+	virtual void SetupInputComponent() override;
 
 	void SetHUDTime();
 	void PollInit();
@@ -86,9 +90,24 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputMappingContext> InputMapping;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> QuitAction;
+	
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<class ABlasterHUD> BlasterHUD;
 
+
+	/*
+	 * Return to Main Menu
+	 */
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UReturnToMainMenu> ReturnToMainMenuClass;
+
+	UPROPERTY()
+	TObjectPtr<UReturnToMainMenu> ReturnToMainMenu;
+
+	bool bReturnToMainMenuOpen;
+	
 	float MatchTime;
 	float WarmupTime;
 	float CooldownTime;

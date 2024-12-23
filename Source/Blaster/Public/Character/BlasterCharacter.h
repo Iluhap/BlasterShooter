@@ -88,6 +88,7 @@ private:
 
 	void SwapWeapons();
 
+private:
 	UFUNCTION(Server, Reliable)
 	void ServerEquip();
 

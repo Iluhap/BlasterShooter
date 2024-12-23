@@ -3,6 +3,7 @@
 
 #include "Character/BlasterPlayerController.h"
 
+#include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Character/BlasterCharacter.h"
 #include "Components/CombatComponent.h"
@@ -20,6 +21,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "PlayerState/BlasterPlayerState.h"
+#include "HUD/ReturnToMainMenu.h"
 
 
 ABlasterPlayerController::ABlasterPlayerController()
@@ -45,6 +47,10 @@ ABlasterPlayerController::ABlasterPlayerController()
 	SavedDefeats = 0.f;
 	SavedShield = 0.f;
 	SavedMaxShield = 0.f;
+
+	NetTripTime = 0.f;
+
+	bReturnToMainMenuOpen = false;
 }
 
 void ABlasterPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -86,6 +92,17 @@ void ABlasterPlayerController::OnPossess(APawn* PawnToPossess)
 	{
 		SetHUDHealth(Health->GetHealth(), Health->GetMaxHealth());
 		SetHUDShield(Health->GetShield(), Health->GetMaxShield());
+	}
+}
+
+void ABlasterPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+
+	if (auto* Input = Cast<UEnhancedInputComponent>(InputComponent);
+		IsValid(Input))
+	{
+		Input->BindAction(QuitAction, ETriggerEvent::Completed, this, &ABlasterPlayerController::ShowReturnToMainMenu);
 	}
 }
 
@@ -260,6 +277,31 @@ void ABlasterPlayerController::CheckPing()
 		else
 		{
 			HideHighPingWarning();
+		}
+	}
+}
+
+void ABlasterPlayerController::ShowReturnToMainMenu()
+{
+	if (not IsValid(ReturnToMainMenuClass))
+		return;
+
+	if (not IsValid(ReturnToMainMenu))
+	{
+		ReturnToMainMenu = CreateWidget<UReturnToMainMenu>(this, ReturnToMainMenuClass);
+	}
+
+	if (IsValid(ReturnToMainMenu))
+	{
+		bReturnToMainMenuOpen = !bReturnToMainMenuOpen;
+
+		if (bReturnToMainMenuOpen)
+		{
+			ReturnToMainMenu->MenuSetup();
+		}
+		else
+		{
+			ReturnToMainMenu->MenuTearDown();
 		}
 	}
 }

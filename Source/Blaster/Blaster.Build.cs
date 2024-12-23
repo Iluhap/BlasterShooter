@@ -7,14 +7,14 @@ public class Blaster : ModuleRules
 	public Blaster(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-	
+
 		PublicIncludePaths.AddRange(
 			new string[] { "Blaster/Public" }
 		);
 		PrivateIncludePaths.AddRange(
 			new string[] { "Blaster/Private" }
 		);
-		
+
 		PublicDependencyModuleNames.AddRange(new string[]
 		{
 			"Core",
@@ -23,14 +23,16 @@ public class Blaster : ModuleRules
 			"InputCore",
 			"EnhancedInput",
 			"UMG",
-			"Niagara"
+			"Niagara",
+			"MultiplayerSessions",
+			"OnlineSubsystem", "OnlineSubsystemSteam"
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+		PrivateDependencyModuleNames.AddRange(new string[] { });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
-		
+
 		// Uncomment if you are using online features
 		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
 
