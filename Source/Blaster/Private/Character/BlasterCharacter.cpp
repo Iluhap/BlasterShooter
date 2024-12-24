@@ -82,6 +82,8 @@ ABlasterCharacter::ABlasterCharacter()
 	BaseDissolveValue = 0.55;
 	BaseDissolveGlow = 200.f;
 
+	bLeftGame = false;
+
 	InitHitBoxes();
 }
 
@@ -401,27 +403,28 @@ void ABlasterCharacter::PlaySwapWeaponMontage() const
 	}
 }
 
-void ABlasterCharacter::Eliminate()
+void ABlasterCharacter::Eliminate(bool bPlayerLeftGame)
 {
 	if (IsValid(Combat) and Combat->IsWeaponEquipped())
 	{
 		Combat->DropWeapons();
 	}
 
-	MulticastEliminate();
-
-	GetWorld()->GetTimerManager().SetTimer(EliminationTimerHandle,
-	                                       this, &ABlasterCharacter::EliminationTimerFinished,
-	                                       EliminationDelay);
+	MulticastEliminate(bPlayerLeftGame);
 }
 
-void ABlasterCharacter::MulticastEliminate_Implementation()
+void ABlasterCharacter::LeaveGame()
 {
+	ServerLeaveGame();
+}
+
+void ABlasterCharacter::MulticastEliminate_Implementation(bool bPlayerLeftGame)
+{
+	bLeftGame = bPlayerLeftGame;
 	bIsEliminated = true;
+
 	PlayEliminationMontage();
-
 	StartDissolve();
-
 	DisableMovement();
 
 	if (IsValid(BlasterPlayerController))
@@ -439,14 +442,34 @@ void ABlasterCharacter::MulticastEliminate_Implementation()
 	{
 		ShowSniperScopeWidget(false);
 	}
+
+	GetWorld()->GetTimerManager().SetTimer(EliminationTimerHandle,
+									   this, &ABlasterCharacter::EliminationTimerFinished,
+									   EliminationDelay);
 }
 
 void ABlasterCharacter::EliminationTimerFinished()
 {
 	if (auto* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
-		IsValid(BlasterGameMode))
+		IsValid(BlasterGameMode) and not bLeftGame)
 	{
 		BlasterGameMode->RequestRespawn(this, GetController());
+	}
+	if (bLeftGame and IsLocallyControlled())
+	{
+		OnLeftGame.Broadcast();
+	}
+}
+
+void ABlasterCharacter::ServerLeaveGame_Implementation()
+{
+	if (auto* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+		IsValid(BlasterGameMode))
+	{
+		if (IsValid(BlasterPlayerState))
+		{
+			BlasterGameMode->PlayerLeftGame(this);
+		}
 	}
 }
 

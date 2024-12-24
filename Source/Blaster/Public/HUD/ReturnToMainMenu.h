@@ -28,6 +28,9 @@ private:
 	UFUNCTION()
 	void OnDestroySession(bool bWasSuccessful);
 
+	UFUNCTION()
+	void OnPlayerLeftGame();
+
 private:
 	APlayerController* GetController();
 	class UMultiplayerSessionsSubsystem* GetSessionsSubsystem();

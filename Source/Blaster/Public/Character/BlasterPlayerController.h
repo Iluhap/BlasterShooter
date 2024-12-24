@@ -92,7 +92,7 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> QuitAction;
-	
+
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<class ABlasterHUD> BlasterHUD;
 
@@ -107,7 +107,7 @@ private:
 	TObjectPtr<UReturnToMainMenu> ReturnToMainMenu;
 
 	bool bReturnToMainMenuOpen;
-	
+
 	float MatchTime;
 	float WarmupTime;
 	float CooldownTime;

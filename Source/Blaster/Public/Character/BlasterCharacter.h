@@ -10,6 +10,9 @@
 #include "Interfaces/InteractWithCrosshairInterface.h"
 #include "BlasterCharacter.generated.h"
 
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLeftGame);
+
 UCLASS()
 class BLASTER_API ABlasterCharacter : public ACharacter, public IInteractWithCrosshairInterface
 {
@@ -34,10 +37,8 @@ public:
 	void PlayThrowGrenadeMontage() const;
 	void PlaySwapWeaponMontage() const;
 
-	void Eliminate();
-
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastEliminate();
+	void Eliminate(bool bPlayerLeftGame);
+	void LeaveGame();
 
 	UFUNCTION()
 	void DisableGameplay();
@@ -95,6 +96,12 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerSwapWeapons();
 
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastEliminate(bool bPlayerLeftGame);
+
+	UFUNCTION(Server, Reliable)
+	void ServerLeaveGame();
+
 private:
 	void TurnInPlace(float DeltaTime);
 
@@ -142,6 +149,9 @@ private:
 
 	void RotateInPlace(float DeltaTime);
 
+public:
+	FOnLeftGame OnLeftGame;
+	
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	TObjectPtr<class USpringArmComponent> CameraArm;
@@ -244,6 +254,8 @@ private:
 	float BaseDissolveGlow;
 
 	bool bDisableGameplay;
+
+	bool bLeftGame;
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))

@@ -37,6 +37,8 @@ public:
 
 	void RequestRespawn(ACharacter* EliminatedCharacter, AController* EliminatedController);
 
+	void PlayerLeftGame(ABlasterCharacter* LeavingCharacter);
+
 public:
 	FORCEINLINE float GetWarmupTime() const { return WarmupTime; }
 	FORCEINLINE float GetMatchTime() const { return MatchTime; }
@@ -52,7 +54,7 @@ private:
 
 	UPROPERTY(EditDefaultsOnly)
 	float CooldownTime;
-	
+
 	float CountdownTime;
 
 	float WarmupTimeLeft;
