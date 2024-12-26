@@ -14,8 +14,11 @@
 #include "Components/HealthComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Components/LagCompensationComponent.h"
+#include "Components/LeaderCrownComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameMode/BlasterGameMode.h"
+#include "GameState/BlasterGameState.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "PlayerState/BlasterPlayerState.h"
@@ -53,6 +56,8 @@ ABlasterCharacter::ABlasterCharacter()
 	Buff->SetIsReplicated(true);
 
 	LagCompensationComponent = CreateDefaultSubobject<ULagCompensationComponent>(TEXT("LagCompensation"));
+
+	LeaderCrownComponent = CreateDefaultSubobject<ULeaderCrownComponent>(TEXT("Leader Crown Component"));
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 
@@ -214,6 +219,22 @@ void ABlasterCharacter::DisableGameplay()
 	Combat->SetFiring(false);
 }
 
+void ABlasterCharacter::GainedTheLead()
+{
+	if (IsValid(LeaderCrownComponent))
+	{
+		LeaderCrownComponent->MulticastSpawnCrown();
+	}
+}
+
+void ABlasterCharacter::LostTheLead()
+{
+	if (IsValid(LeaderCrownComponent))
+	{
+		LeaderCrownComponent->MulticastRemoveCrown();
+	}
+}
+
 void ABlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -250,6 +271,14 @@ void ABlasterCharacter::PollInit()
 			BlasterPlayerState->AddToScore(0.f);
 			BlasterPlayerState->AddToDefeats(0.f);
 		}
+	}
+
+	if (const auto* BlasterGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
+		IsValid(BlasterGameState)
+		and BlasterGameState->TopScoringPlayers.Contains(BlasterPlayerState))
+	{
+		if (IsValid(LeaderCrownComponent))
+			LeaderCrownComponent->MulticastSpawnCrown();
 	}
 }
 
@@ -444,8 +473,8 @@ void ABlasterCharacter::MulticastEliminate_Implementation(bool bPlayerLeftGame)
 	}
 
 	GetWorld()->GetTimerManager().SetTimer(EliminationTimerHandle,
-									   this, &ABlasterCharacter::EliminationTimerFinished,
-									   EliminationDelay);
+	                                       this, &ABlasterCharacter::EliminationTimerFinished,
+	                                       EliminationDelay);
 }
 
 void ABlasterCharacter::EliminationTimerFinished()

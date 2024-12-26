@@ -46,6 +46,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowSniperScopeWidget(bool bShowScope);
 
+	void GainedTheLead();
+	void LostTheLead();
+
 public:
 	void SetOverlappingWeapon(class AWeapon* Weapon);
 
@@ -176,6 +179,9 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<class ULagCompensationComponent> LagCompensationComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
+	TObjectPtr<class ULeaderCrownComponent> LeaderCrownComponent;
 
 private:
 	UPROPERTY(EditAnywhere, Category = Combat)
