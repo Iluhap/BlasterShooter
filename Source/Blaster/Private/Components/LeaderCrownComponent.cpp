@@ -16,8 +16,9 @@
 ULeaderCrownComponent::ULeaderCrownComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
-}
 
+	IsCrownActive = false;
+}
 
 void ULeaderCrownComponent::BeginPlay()
 {
@@ -40,31 +41,43 @@ ABlasterCharacter* ULeaderCrownComponent::GetOwnerCharacter() const
 	return Cast<ABlasterCharacter>(GetOwner());
 }
 
+TOptional<FFXSystemSpawnParameters> ULeaderCrownComponent::GetCrownSpawnParams() const
+{
+	if (const auto* Character = GetOwnerCharacter();
+		IsValid(Character))
+	{
+		return FFXSystemSpawnParameters {
+			.WorldContextObject = this,
+			.SystemTemplate = CrownSystem,
+			.Location = Character->GetActorLocation() + FVector { 0.f, 0.f, 110.f },
+			.Rotation = Character->GetActorRotation(),
+			.AttachToComponent = Character->GetCapsuleComponent(),
+			.bAutoDestroy = true,
+			.bAutoActivate = false,
+		};
+	}
+
+	return {};
+}
+
 void ULeaderCrownComponent::MulticastSpawnCrown_Implementation()
 {
 	if (not IsValid(CrownSystem))
 		return;
 
-	if (const auto* Character = GetOwnerCharacter();
-		IsValid(Character))
+	if (not IsValid(CrownComponent))
 	{
-		if (not IsValid(CrownComponent))
+		if (const auto Params = GetCrownSpawnParams();
+			Params.IsSet())
 		{
-			CrownComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
-				CrownSystem,
-				Character->GetCapsuleComponent(),
-				FName {},
-				Character->GetActorLocation() + FVector { 0.f, 0.f, 110.f },
-				Character->GetActorRotation(),
-				EAttachLocation::KeepWorldPosition,
-				false
-			);
+			CrownComponent = UNiagaraFunctionLibrary::SpawnSystemAttachedWithParams(Params.GetValue());
 		}
 	}
 
-	if (IsValid(CrownComponent))
+	if (IsValid(CrownComponent) and not IsCrownActive)
 	{
 		CrownComponent->Activate();
+		IsCrownActive = true;
 	}
 }
 
@@ -73,5 +86,6 @@ void ULeaderCrownComponent::MulticastRemoveCrown_Implementation()
 	if (IsValid(CrownComponent))
 	{
 		CrownComponent->DestroyComponent();
+		IsCrownActive = false;
 	}
 }

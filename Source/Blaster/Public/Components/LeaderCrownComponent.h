@@ -28,10 +28,14 @@ public:
 private:
 	class ABlasterCharacter* GetOwnerCharacter() const;
 
+	TOptional<struct FFXSystemSpawnParameters> GetCrownSpawnParams() const;
+
 private:
 	UPROPERTY(EditAnywhere, Category=Crown)
 	TObjectPtr<class UNiagaraComponent> CrownComponent;
 
 	UPROPERTY(EditAnywhere, Category=Crown)
 	TObjectPtr<class UNiagaraSystem> CrownSystem;
+
+	bool IsCrownActive;
 };

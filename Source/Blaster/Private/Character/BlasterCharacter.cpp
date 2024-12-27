@@ -270,15 +270,15 @@ void ABlasterCharacter::PollInit()
 		{
 			BlasterPlayerState->AddToScore(0.f);
 			BlasterPlayerState->AddToDefeats(0.f);
-		}
-	}
 
-	if (const auto* BlasterGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
-		IsValid(BlasterGameState)
-		and BlasterGameState->TopScoringPlayers.Contains(BlasterPlayerState))
-	{
-		if (IsValid(LeaderCrownComponent))
-			LeaderCrownComponent->MulticastSpawnCrown();
+			if (const auto* BlasterGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
+				IsValid(BlasterGameState)
+				and BlasterGameState->TopScoringPlayers.Contains(BlasterPlayerState))
+			{
+				if (IsValid(LeaderCrownComponent))
+					LeaderCrownComponent->MulticastSpawnCrown();
+			}
+		}
 	}
 }
 
