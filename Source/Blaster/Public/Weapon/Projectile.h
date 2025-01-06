@@ -42,9 +42,11 @@ protected:
 protected:
 	void SpawnTrailSystem();
 	void HideProjectile();
+	void ApplyDamage(const FHitResult& HitResult);
 
 public:
 	float Damage;
+	float HeadshotDamageMultiplier;
 
 	// Used with Server-Side Rewind
 	bool bUseServerSideRewind = false;

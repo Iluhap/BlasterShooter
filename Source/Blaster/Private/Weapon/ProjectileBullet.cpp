@@ -53,7 +53,7 @@ void AProjectileBullet::OnHit(UPrimitiveComponent* HitComponent,
 	{
 		if (OwnerCharacter->HasAuthority() and not bUseServerSideRewind)
 		{
-			UGameplayStatics::ApplyDamage(OtherActor, Damage, OwnerController, this, UDamageType::StaticClass());
+			ApplyDamage(Hit);
 			Super::OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
 			return;
 		}

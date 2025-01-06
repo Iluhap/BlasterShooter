@@ -57,6 +57,7 @@ void AProjectileWeapon::ServerFire_Implementation(const FVector_NetQuantize& Hit
 			SpawnedProjectile = SpawnProjectile(ProjectileClass, HitTarget);
 			SpawnedProjectile->bUseServerSideRewind = false;
 			SpawnedProjectile->Damage = Damage;
+			SpawnedProjectile->HeadshotDamageMultiplier = HeadshotDamageMultiplier;
 		}
 		else
 		{
@@ -71,6 +72,7 @@ void AProjectileWeapon::ServerFire_Implementation(const FVector_NetQuantize& Hit
 			SpawnedProjectile = SpawnProjectile(ProjectileClass, HitTarget);
 			SpawnedProjectile->bUseServerSideRewind = false;
 			SpawnedProjectile->Damage = Damage;
+			SpawnedProjectile->HeadshotDamageMultiplier = HeadshotDamageMultiplier;
 		}
 	}
 }

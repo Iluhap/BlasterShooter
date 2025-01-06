@@ -37,7 +37,7 @@ protected:
 	bool TraceHit(const FVector& Start, const FVector& HitTarget, FHitResult& HitResult) const;
 
 private:
-	virtual void OnHitConfirmed(class ABlasterCharacter* HitCharacter, const FRewindResult& Result) override;
+	virtual void OnHitConfirmed(ABlasterCharacter* HitCharacter, const ::FRewindResult& Result) override;
 
 private:
 	UPROPERTY(EditAnywhere)

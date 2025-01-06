@@ -99,9 +99,9 @@ protected:
 	UFUNCTION(Client, Reliable)
 	void ClientAddAmmo(int32 ServerAmmo);
 
-protected:
+public:
 	UFUNCTION()
-	virtual void OnHitConfirmed(class ABlasterCharacter* HitCharacter, const FRewindResult& Result);
+	virtual void OnHitConfirmed(ABlasterCharacter* HitCharacter, const FRewindResult& Result);
 
 protected:
 	virtual void OnWeaponStateSet();
@@ -118,7 +118,7 @@ protected:
 	virtual FVector ApplyScatterTo(const FVector& TraceStart, const FVector& HitTarget) const;
 	void SpendRound();
 	void OnFireEffects() const;
-	void ApplyDamage(AActor* DamagedActor) const;
+	void ApplyDamage(AActor* DamagedActor, const float DamageMultiplier = 1.f) const;
 
 	class ULagCompensationComponent* GetLagCompensationComponent();
 
@@ -166,6 +166,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category= "Weapon Properties")
 	float Damage;
+
+	UPROPERTY(EditAnywhere, Category= "Weapon Properties")
+	float HeadshotDamageMultiplier;
 
 	UPROPERTY(EditAnywhere)
 	bool bUseServerSideRewind;

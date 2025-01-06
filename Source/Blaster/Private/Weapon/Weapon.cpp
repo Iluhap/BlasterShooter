@@ -48,6 +48,8 @@ AWeapon::AWeapon()
 	MagazineCapacity = 30;
 	Ammo = MagazineCapacity;
 
+	HeadshotDamageMultiplier = 2.f;
+
 	DistanceToSphere = 400.f;
 	SphereRadius = 50.f;
 	bUseScatter = false;
@@ -341,7 +343,10 @@ void AWeapon::OnHitConfirmed(ABlasterCharacter* HitCharacter, const FRewindResul
 	if (const auto& [TracedHitBoxes] = Result;
 		not TracedHitBoxes.IsEmpty())
 	{
-		ApplyDamage(HitCharacter);
+		if (TracedHitBoxes.Contains(FName { "Head" }))
+			ApplyDamage(HitCharacter, HeadshotDamageMultiplier);
+		else
+			ApplyDamage(HitCharacter);
 	}
 }
 
@@ -489,7 +494,7 @@ void AWeapon::OnFireEffects() const
 	EjectCasing();
 }
 
-void AWeapon::ApplyDamage(AActor* DamagedActor) const
+void AWeapon::ApplyDamage(AActor* DamagedActor, const float DamageMultiplier) const
 {
 	const APawn* OwnerPawn = Cast<APawn>(GetOwner());
 	if (not IsValid(OwnerPawn))
@@ -504,7 +509,7 @@ void AWeapon::ApplyDamage(AActor* DamagedActor) const
 	{
 		UGameplayStatics::ApplyDamage(
 			BlasterCharacter,
-			Damage,
+			Damage * DamageMultiplier,
 			InstigatorController,
 			GetOwner(),
 			UDamageType::StaticClass());

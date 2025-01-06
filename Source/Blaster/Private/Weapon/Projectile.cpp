@@ -189,3 +189,21 @@ void AProjectile::HideProjectile()
 		TrailSystemComponent->GetSystemInstanceController()->Deactivate();
 	}
 }
+
+void AProjectile::ApplyDamage(const FHitResult& HitResult)
+{
+	if (not IsValid(OwnerController))
+		return;
+
+	float DamageToCause = Damage;
+
+	if (HitResult.BoneName.ToString() == FString("head"))
+	{
+		DamageToCause *= HeadshotDamageMultiplier;
+	}
+
+	UGameplayStatics::ApplyDamage(HitResult.GetActor(),
+	                              DamageToCause,
+	                              OwnerController, this,
+	                              UDamageType::StaticClass());
+}
